@@ -47,11 +47,23 @@
   const defaultCategorySelect = document.getElementById("default-category");
   const uploadProgress = document.getElementById("upload-progress");
   const uploadBar = document.getElementById("upload-bar");
+  const uploadSpeedEl = document.getElementById("upload-speed");
+  const uploadEtaEl = document.getElementById("upload-eta");
+  const uploadFilesListEl = document.getElementById("upload-files-list");
   const userUidInput = document.getElementById("user-uid");
   const userRoleSelect = document.getElementById("user-role");
   const saveRoleBtn = document.getElementById("save-role");
   const roleStatus = document.getElementById("role-status");
   const usersList = document.getElementById("users-list");
+  const userSearchInput = document.getElementById("user-search");
+  const userFilterRole = document.getElementById("user-filter-role");
+  const refreshUsersBtn = document.getElementById("refresh-users");
+  const selectAllBtn = document.getElementById("select-all");
+  const deselectAllBtn = document.getElementById("deselect-all");
+  const bulkOperationProgress = document.getElementById("bulk-operation-progress");
+  const bulkOperationStatus = document.getElementById("bulk-operation-status");
+  const bulkOperationCount = document.getElementById("bulk-operation-count");
+  const bulkOperationBar = document.getElementById("bulk-operation-bar");
 
   // Ensure persistent login
   try {
@@ -166,31 +178,168 @@
     fileInput.value = "";
   });
 
+  // Helper function to format bytes
+  function formatBytes(bytes) {
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+  }
+
+  // Helper function to format time
+  function formatTime(seconds) {
+    if (seconds < 60) return `${Math.round(seconds)}s`;
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.round(seconds % 60);
+    return `${mins}m ${secs}s`;
+  }
+
   async function uploadFiles(files) {
     setStatus(`Uploading ${files.length} file(s)...`);
     const now = Date.now();
     let completed = 0;
+    let totalBytes = 0;
+    let totalBytesTransferred = 0;
+    const startTime = Date.now();
+    const fileUploads = [];
+    
+    // Calculate total size
+    files.forEach(file => {
+      totalBytes += file.size;
+    });
+
+    // Initialize file tracking
+    files.forEach((file, index) => {
+      fileUploads.push({
+        name: file.name,
+        size: file.size,
+        index: index,
+        status: "pending", // pending, uploading, completed, error
+        progress: 0,
+        bytesTransferred: 0,
+        speed: 0,
+        startTime: null,
+      });
+    });
+
+    // Update files list display
+    function updateFilesList() {
+      if (!uploadFilesListEl) return;
+      uploadFilesListEl.innerHTML = "";
+      fileUploads.forEach((fileUpload, idx) => {
+        const item = document.createElement("div");
+        item.style.cssText = `
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 6px 8px;
+          margin-bottom: 4px;
+          background: ${fileUpload.status === "uploading" ? "#1a1a1c" : fileUpload.status === "completed" ? "#0f1f0f" : fileUpload.status === "error" ? "#1f0f0f" : "#0f0f10"};
+          border: 1px solid var(--border);
+          border-radius: 6px;
+          font-size: 12px;
+        `;
+        
+        const left = document.createElement("div");
+        left.style.cssText = "flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;";
+        left.textContent = fileUpload.name;
+        
+        const right = document.createElement("div");
+        right.style.cssText = "display: flex; align-items: center; gap: 8px; margin-left: 8px;";
+        
+        if (fileUpload.status === "uploading") {
+          const progress = document.createElement("span");
+          progress.textContent = `${fileUpload.progress.toFixed(0)}%`;
+          progress.style.color = "var(--accent)";
+          right.appendChild(progress);
+        } else if (fileUpload.status === "completed") {
+          const check = document.createElement("span");
+          check.textContent = "✓";
+          check.style.color = "#4ade80";
+          right.appendChild(check);
+        } else if (fileUpload.status === "error") {
+          const error = document.createElement("span");
+          error.textContent = "✗";
+          error.style.color = "#ff7171";
+          right.appendChild(error);
+        }
+        
+        item.appendChild(left);
+        item.appendChild(right);
+        uploadFilesListEl.appendChild(item);
+      });
+    }
+
     if (uploadProgress && uploadBar) {
       uploadProgress.style.display = "block";
       uploadBar.style.width = "0%";
+      updateFilesList();
     }
+
+    // Upload speed calculation
+    let lastUpdateTime = Date.now();
+    let lastTotalBytesTransferred = 0;
+    let currentSpeed = 0;
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+      const fileUpload = fileUploads[i];
       const path = `gallery/${now}-${i}-${file.name}`;
       const ref = storage.ref().child(path);
+      
+      fileUpload.status = "uploading";
+      fileUpload.startTime = Date.now();
+      updateFilesList();
+
       await new Promise((resolve, reject) => {
         const task = ref.put(file);
         task.on(
           "state_changed",
           (snap) => {
+            const now = Date.now();
+            const timeDelta = (now - lastUpdateTime) / 1000; // seconds
+            
+            fileUpload.bytesTransferred = snap.bytesTransferred;
+            fileUpload.progress = (snap.bytesTransferred / snap.totalBytes) * 100;
+
+            // Update total progress
+            totalBytesTransferred = fileUploads.reduce((sum, fu) => sum + fu.bytesTransferred, 0);
+            const bytesDelta = totalBytesTransferred - lastTotalBytesTransferred;
+            
+            if (timeDelta > 0.5) { // Update speed every 500ms
+              currentSpeed = bytesDelta / timeDelta;
+              lastUpdateTime = now;
+              lastTotalBytesTransferred = totalBytesTransferred;
+            }
+
+            fileUpload.speed = currentSpeed;
+            
+            // Calculate total progress percentage
+            const totalPct = (totalBytesTransferred / totalBytes) * 100;
+            
             if (uploadBar) {
-              const filePct = (snap.bytesTransferred / snap.totalBytes) * 100;
-              const totalPct =
-                ((completed + filePct / 100) / files.length) * 100;
               uploadBar.style.width = `${totalPct.toFixed(2)}%`;
             }
+
+            // Update speed and ETA
+            if (uploadSpeedEl && currentSpeed > 0) {
+              uploadSpeedEl.textContent = `Speed: ${formatBytes(currentSpeed)}/s`;
+            }
+            
+            if (uploadEtaEl && currentSpeed > 0) {
+              const remainingBytes = totalBytes - totalBytesTransferred;
+              const etaSeconds = remainingBytes / currentSpeed;
+              uploadEtaEl.textContent = `ETA: ${formatTime(etaSeconds)}`;
+            }
+
+            updateFilesList();
           },
-          reject,
+          (error) => {
+            fileUpload.status = "error";
+            updateFilesList();
+            reject(error);
+          },
           async () => {
             try {
               const url = await ref.getDownloadURL();
@@ -199,24 +348,27 @@
               const categoryDefault =
                 defaultCategorySelect?.value || "campaign";
               
-              // Extract EXIF data if EXIF library is available
+              // Extract EXIF data using centralized metadata manager
               let exifData = {};
-              if (typeof EXIF !== 'undefined') {
+              if (window.metadataManager && typeof window.metadataManager.extractEXIF === 'function') {
                 try {
-                  exifData = await new Promise((resolve, reject) => {
-                    // Set timeout to prevent hanging if EXIF extraction fails silently
-                    const timeout = setTimeout(() => {
-                      resolve({});
-                    }, 5000);
-                    
+                  exifData = await window.metadataManager.extractEXIF(file);
+                } catch (exifErr) {
+                  console.warn("EXIF extraction failed:", exifErr);
+                  exifData = {};
+                }
+              } else if (typeof EXIF !== 'undefined') {
+                // Fallback to direct EXIF extraction if metadataManager not available
+                try {
+                  exifData = await new Promise((resolve) => {
+                    const timeout = setTimeout(() => resolve({}), 5000);
                     EXIF.getData(file, function () {
                       clearTimeout(timeout);
                       try {
                         const exposureTime = EXIF.getTag(this, "ExposureTime");
                         const shutterSpeed = exposureTime ? 
                           (exposureTime >= 1 ? `${exposureTime}s` : `1/${Math.round(1 / exposureTime)}s`) : "";
-                        
-                        const exif = {
+                        resolve({
                           make: EXIF.getTag(this, "Make") || "",
                           model: EXIF.getTag(this, "Model") || "",
                           dateTime: EXIF.getTag(this, "DateTime") || EXIF.getTag(this, "DateTimeOriginal") || "",
@@ -224,12 +376,8 @@
                           aperture: EXIF.getTag(this, "FNumber") ? `f/${EXIF.getTag(this, "FNumber")}` : "",
                           shutterSpeed: shutterSpeed,
                           focalLength: EXIF.getTag(this, "FocalLength") ? `${Math.round(EXIF.getTag(this, "FocalLength"))}mm` : "",
-                          gps: {
-                            latitude: EXIF.getTag(this, "GPSLatitude") || null,
-                            longitude: EXIF.getTag(this, "GPSLongitude") || null,
-                          },
-                        };
-                        resolve(exif);
+                          gps: { latitude: null, longitude: null },
+                        });
                       } catch (err) {
                         resolve({});
                       }
@@ -238,6 +386,43 @@
                 } catch (exifErr) {
                   console.warn("EXIF extraction failed:", exifErr);
                   exifData = {};
+                }
+              }
+
+              // Generate automatic alt text and keywords if metadataManager is available
+              let autoAltText = captionDefault || file.name;
+              let autoKeywords = [];
+              
+              if (window.metadataManager) {
+                const tempImage = {
+                  url: url,
+                  caption: captionDefault || file.name,
+                  category: categoryDefault,
+                  metadata: {
+                    title: captionDefault || file.name,
+                    description: "",
+                    altText: "",
+                    keywords: [],
+                    exif: exifData,
+                  },
+                };
+                
+                // Generate alt text
+                if (typeof window.metadataManager.generateAltText === 'function') {
+                  try {
+                    autoAltText = window.metadataManager.generateAltText(tempImage);
+                  } catch (err) {
+                    console.warn("Failed to generate alt text:", err);
+                  }
+                }
+                
+                // Extract keywords
+                if (typeof window.metadataManager.extractKeywords === 'function') {
+                  try {
+                    autoKeywords = window.metadataManager.extractKeywords(tempImage);
+                  } catch (err) {
+                    console.warn("Failed to extract keywords:", err);
+                  }
                 }
               }
 
@@ -250,24 +435,41 @@
                 metadata: {
                   title: captionDefault || file.name,
                   description: "",
-                  altText: captionDefault || file.name,
-                  keywords: [],
+                  altText: autoAltText,
+                  keywords: autoKeywords,
                   exif: exifData,
                 },
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
               });
+              
+              fileUpload.status = "completed";
+              fileUpload.progress = 100;
               completed += 1;
               setStatus(`Uploaded ${completed}/${files.length}`);
+              updateFilesList();
               resolve();
             } catch (e) {
+              fileUpload.status = "error";
+              updateFilesList();
               reject(e);
             }
           }
         );
       });
     }
-    setStatus("Upload complete.");
-    if (uploadProgress) uploadProgress.style.display = "none";
+    
+    const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+    setStatus(`Upload complete! ${files.length} file(s) uploaded in ${totalTime}s`);
+    
+    // Clear speed and ETA after completion
+    if (uploadSpeedEl) uploadSpeedEl.textContent = "";
+    if (uploadEtaEl) uploadEtaEl.textContent = "";
+    
+    // Hide progress after a delay
+    setTimeout(() => {
+      if (uploadProgress) uploadProgress.style.display = "none";
+    }, 3000);
+    
     await loadGallery();
   }
 
@@ -296,7 +498,12 @@
 
       const img = document.createElement("img");
       img.setAttribute("src", String(data.url || ""));
-      img.setAttribute("alt", String(data.caption || ""));
+      // Use generated alt text if available, otherwise fallback to caption
+      const altText = data.metadata?.altText || 
+                     (window.metadataManager?.generateAltText ? 
+                       window.metadataManager.generateAltText(data) : 
+                       data.caption || "");
+      img.setAttribute("alt", String(altText));
       img.setAttribute("loading", "lazy");
       img.setAttribute("decoding", "async");
 
@@ -413,16 +620,78 @@
 
   refreshBtn?.addEventListener("click", loadGallery);
   saveOrderBtn?.addEventListener("click", async () => {
+    const items = Array.from(galleryAdmin.children);
+    if (items.length === 0) {
+      alert("No items to save.");
+      return;
+    }
+    
+    showBulkProgress(true);
+    updateBulkProgress(0, items.length, "Saving order...");
+    
     const batch = db.batch();
-    Array.from(galleryAdmin.children).forEach((item, index) => {
+    let processed = 0;
+    
+    items.forEach((item, index) => {
       const id = item.getAttribute("data-id");
-      if (!id) return;
+      if (!id) {
+        processed++;
+        return;
+      }
       const ref = db.collection("gallery").doc(id);
       batch.update(ref, { order: index + 1 });
+      processed++;
+      updateBulkProgress(processed, items.length, `Updating order for ${processed} of ${items.length}...`);
     });
-    await batch.commit();
-    alert("Order saved");
+    
+    try {
+      await batch.commit();
+      updateBulkProgress(items.length, items.length, "Order saved successfully!");
+    } catch (err) {
+      console.error("Save order error:", err);
+      updateBulkProgress(items.length, items.length, `Error: ${err.message || "Failed to save order"}`);
+    }
+    
+    setTimeout(() => {
+      showBulkProgress(false);
+    }, 2000);
   });
+
+  // Select all / Deselect all
+  selectAllBtn?.addEventListener("click", () => {
+    galleryAdmin.querySelectorAll(".select-item").forEach((cb) => {
+      /** @type {HTMLInputElement} */ (cb).checked = true;
+    });
+  });
+
+  deselectAllBtn?.addEventListener("click", () => {
+    galleryAdmin.querySelectorAll(".select-item").forEach((cb) => {
+      /** @type {HTMLInputElement} */ (cb).checked = false;
+    });
+  });
+
+  // Show/hide bulk operation progress
+  function showBulkProgress(show) {
+    if (bulkOperationProgress) {
+      bulkOperationProgress.style.display = show ? "block" : "none";
+    }
+    if (!show && bulkOperationBar) {
+      bulkOperationBar.style.width = "0%";
+    }
+  }
+
+  function updateBulkProgress(current, total, status) {
+    if (bulkOperationStatus) {
+      bulkOperationStatus.textContent = status || "";
+    }
+    if (bulkOperationCount) {
+      bulkOperationCount.textContent = `${current}/${total}`;
+    }
+    if (bulkOperationBar && total > 0) {
+      const pct = (current / total) * 100;
+      bulkOperationBar.style.width = `${pct.toFixed(1)}%`;
+    }
+  }
 
   // Bulk delete selected
   deleteSelectedBtn?.addEventListener("click", async () => {
@@ -436,10 +705,21 @@
       return;
     }
     if (!confirm(`Delete ${selected.length} selected image(s)?`)) return;
+    
+    showBulkProgress(true);
+    let completed = 0;
+    const total = selected.length;
+
     for (const item of selected) {
       const id = item.getAttribute("data-id");
-      if (!id) continue;
+      if (!id) {
+        completed++;
+        updateBulkProgress(completed, total, `Deleting...`);
+        continue;
+      }
+      
       try {
+        updateBulkProgress(completed, total, `Deleting ${item.querySelector("img")?.alt || id}...`);
         const docRef = db.collection("gallery").doc(id);
         const snap = await docRef.get();
         const data = snap.data();
@@ -450,54 +730,183 @@
         }
         await docRef.delete();
         item.remove();
-      } catch (_) {}
+        completed++;
+        updateBulkProgress(completed, total, `Deleted ${completed} of ${total}...`);
+      } catch (err) {
+        console.error("Delete error:", err);
+        completed++;
+        updateBulkProgress(completed, total, `Error deleting ${id}...`);
+      }
     }
+    
+    updateBulkProgress(completed, total, `Deleted ${completed} image(s) successfully.`);
+    setTimeout(() => {
+      showBulkProgress(false);
+    }, 2000);
+    
+    await loadGallery();
   });
 
   // Users management
+  let allUsersData = [];
+  
   async function loadUsers() {
     if (!usersList) return;
     usersList.textContent = "Loading users...";
     try {
       const snap = await db.collection("users").orderBy("role").get();
-      if (snap.empty) {
-        usersList.textContent = "No users found.";
-        return;
-      }
-      const container = document.createElement("div");
-      container.style.display = "grid";
-      container.style.gridTemplateColumns = "repeat(12, 1fr)";
-      container.style.gap = "8px";
+      allUsersData = [];
+      
       snap.forEach((doc) => {
         const data = doc.data() || {};
-        const row = document.createElement("div");
-        row.className = "admin-col-12";
-        const box = document.createElement("div");
-        box.style.display = "flex";
-        box.style.justifyContent = "space-between";
-        box.style.alignItems = "center";
-        box.style.border = "1px solid var(--border)";
-        box.style.borderRadius = "8px";
-        box.style.padding = "8px 10px";
-        const left = document.createElement("div");
-        left.style.overflow = "hidden";
-        left.style.textOverflow = "ellipsis";
-        left.style.whiteSpace = "nowrap";
-        left.textContent = `${doc.id}`;
-        const right = document.createElement("small");
-        right.className = "muted";
-        right.textContent = `role: ${String(data.role || "unknown")}`;
-        box.appendChild(left);
-        box.appendChild(right);
-        row.appendChild(box);
-        container.appendChild(row);
+        const uid = doc.id;
+        allUsersData.push({
+          uid,
+          role: data.role || "unknown",
+          email: data.email || "", // Email stored in Firestore
+          displayName: data.displayName || "",
+          createdAt: data.createdAt || "",
+          lastSignIn: data.lastSignIn || "",
+        });
       });
-      usersList.innerHTML = "";
-      usersList.appendChild(container);
+      
+      renderUsers(allUsersData);
     } catch (err) {
       usersList.textContent = (err && err.message) || "Failed to load users.";
     }
   }
+
+  function renderUsers(users) {
+    if (!usersList) return;
+    
+    const searchTerm = (userSearchInput?.value || "").toLowerCase().trim();
+    const roleFilter = userFilterRole?.value || "all";
+    
+    // Filter users
+    let filtered = users.filter(user => {
+      const matchesSearch = !searchTerm || 
+        user.uid.toLowerCase().includes(searchTerm) ||
+        user.email.toLowerCase().includes(searchTerm) ||
+        (user.displayName && user.displayName.toLowerCase().includes(searchTerm));
+      const matchesRole = roleFilter === "all" || user.role === roleFilter;
+      return matchesSearch && matchesRole;
+    });
+    
+    if (filtered.length === 0) {
+      usersList.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--muted);">No users found.</div>`;
+      return;
+    }
+    
+    const container = document.createElement("div");
+    container.style.display = "grid";
+    container.style.gridTemplateColumns = "repeat(12, 1fr)";
+    container.style.gap = "8px";
+    
+    filtered.forEach((user) => {
+      const row = document.createElement("div");
+      row.className = "admin-col-12";
+      row.setAttribute("data-uid", user.uid);
+      
+      const box = document.createElement("div");
+      box.style.cssText = `
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px 14px;
+        background: ${user.uid === auth.currentUser?.uid ? "#1a1a1c" : "#0f0f10"};
+      `;
+      
+      const left = document.createElement("div");
+      left.style.cssText = "flex: 1; min-width: 0;";
+      
+      const uidDiv = document.createElement("div");
+      uidDiv.style.cssText = "font-size: 12px; color: var(--muted); margin-bottom: 4px; font-family: monospace;";
+      uidDiv.textContent = user.uid;
+      
+      const emailDiv = document.createElement("div");
+      emailDiv.style.cssText = "font-size: 14px; color: var(--text); margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;";
+      emailDiv.textContent = user.email || "(no email)";
+      
+      if (user.displayName) {
+        const nameDiv = document.createElement("div");
+        nameDiv.style.cssText = "font-size: 13px; color: var(--muted);";
+        nameDiv.textContent = user.displayName;
+        left.appendChild(nameDiv);
+      }
+      
+      left.appendChild(uidDiv);
+      left.appendChild(emailDiv);
+      
+      const right = document.createElement("div");
+      right.style.cssText = "display: flex; align-items: center; gap: 8px; margin-left: 12px;";
+      
+      const roleBadge = document.createElement("span");
+      roleBadge.style.cssText = `
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+        background: ${user.role === "admin" ? "#1f3a1f" : "#1f1f3a"};
+        color: ${user.role === "admin" ? "#4ade80" : "#8b9aff"};
+        border: 1px solid ${user.role === "admin" ? "#2d4d2d" : "#2d2d4d"};
+      `;
+      roleBadge.textContent = user.role || "unknown";
+      
+      const quickRoleBtn = document.createElement("button");
+      quickRoleBtn.className = "btn btn-small";
+      quickRoleBtn.style.cssText = "font-size: 11px; padding: 4px 8px;";
+      quickRoleBtn.textContent = user.role === "admin" ? "→ Member" : "→ Admin";
+      quickRoleBtn.title = `Change role to ${user.role === "admin" ? "member" : "admin"}`;
+      quickRoleBtn.addEventListener("click", async () => {
+        const newRole = user.role === "admin" ? "member" : "admin";
+        if (confirm(`Change ${user.email || user.uid} role to ${newRole}?`)) {
+          try {
+            await db.collection("users").doc(user.uid).set({ role: newRole }, { merge: true });
+            roleStatus.textContent = `Role changed to ${newRole}.`;
+            await loadUsers();
+            // Auto-fill the form
+            if (userUidInput) userUidInput.value = user.uid;
+            if (userRoleSelect) userRoleSelect.value = newRole;
+          } catch (err) {
+            roleStatus.textContent = `Error: ${err.message || "Failed to change role"}`;
+          }
+        }
+      });
+      
+      right.appendChild(roleBadge);
+      if (user.uid !== auth.currentUser?.uid) {
+        right.appendChild(quickRoleBtn);
+      } else {
+        const currentUserBadge = document.createElement("span");
+        currentUserBadge.style.cssText = "font-size: 11px; color: var(--accent);";
+        currentUserBadge.textContent = "(You)";
+        right.appendChild(currentUserBadge);
+      }
+      
+      box.appendChild(left);
+      box.appendChild(right);
+      row.appendChild(box);
+      container.appendChild(row);
+    });
+    
+    usersList.innerHTML = "";
+    usersList.appendChild(container);
+  }
+
+  // Search and filter users
+  userSearchInput?.addEventListener("input", () => {
+    renderUsers(allUsersData);
+  });
+
+  userFilterRole?.addEventListener("change", () => {
+    renderUsers(allUsersData);
+  });
+
+  refreshUsersBtn?.addEventListener("click", () => {
+    loadUsers();
+  });
 
   saveRoleBtn?.addEventListener("click", async () => {
     if (!userUidInput || !userRoleSelect || !roleStatus) return;
@@ -508,20 +917,46 @@
       /** @type {HTMLSelectElement} */ (userRoleSelect).value || ""
     ).trim();
     roleStatus.textContent = "";
+    
     if (!uid) {
       roleStatus.textContent = "Enter a user UID.";
+      roleStatus.style.color = "#ff7171";
       return;
     }
+    
     if (role !== "admin" && role !== "member") {
       roleStatus.textContent = "Role must be 'admin' or 'member'.";
+      roleStatus.style.color = "#ff7171";
       return;
     }
+    
+    // Note: Client SDK can't verify user existence in Auth directly
+    // This is a limitation - consider using Cloud Functions for full validation
+    
+    // Prevent changing own role (security)
+    if (uid === auth.currentUser?.uid) {
+      roleStatus.textContent = "Cannot change your own role. Ask another admin.";
+      roleStatus.style.color = "#ff7171";
+      return;
+    }
+    
+    roleStatus.textContent = "Saving...";
+    roleStatus.style.color = "var(--muted)";
+    
     try {
       await db.collection("users").doc(uid).set({ role }, { merge: true });
-      roleStatus.textContent = "Saved.";
+      roleStatus.textContent = `Role saved: ${role}`;
+      roleStatus.style.color = "#4ade80";
       await loadUsers();
+      
+      // Clear form after 2 seconds
+      setTimeout(() => {
+        if (userUidInput) userUidInput.value = "";
+        roleStatus.textContent = "";
+      }, 2000);
     } catch (err) {
-      roleStatus.textContent = (err && err.message) || "Failed to save role.";
+      roleStatus.textContent = `Error: ${err.message || "Failed to save role"}`;
+      roleStatus.style.color = "#ff7171";
     }
   });
 
@@ -590,18 +1025,56 @@
     // Create EXIF display safely (avoid XSS)
     const exifFields = [
       { label: "Camera", value: `${exifData.make || ""} ${exifData.model || ""}`.trim() || "N/A" },
+    ];
+    
+    // Add lens info if available
+    if (exifData.lens?.make || exifData.lens?.model) {
+      exifFields.push({
+        label: "Lens",
+        value: `${exifData.lens.make || ""} ${exifData.lens.model || ""}`.trim() || "N/A"
+      });
+    }
+    
+    exifFields.push(
       { label: "Date", value: exifData.dateTime || "N/A" },
       { label: "ISO", value: exifData.iso || "N/A" },
       { label: "Aperture", value: exifData.aperture || "N/A" },
       { label: "Shutter Speed", value: exifData.shutterSpeed || "N/A" },
-      { label: "Focal Length", value: exifData.focalLength || "N/A" },
-    ];
+      { label: "Focal Length", value: exifData.focalLength || "N/A" }
+    );
     
-    if (exifData.gps?.latitude && exifData.gps?.longitude) {
+    // Add additional EXIF fields if available
+    if (exifData.flash) {
+      exifFields.push({ label: "Flash", value: exifData.flash });
+    }
+    if (exifData.whiteBalance) {
+      exifFields.push({ label: "White Balance", value: exifData.whiteBalance });
+    }
+    if (exifData.exposureMode) {
+      exifFields.push({ label: "Exposure Mode", value: exifData.exposureMode });
+    }
+    if (exifData.dimensions?.width && exifData.dimensions?.height) {
       exifFields.push({
-        label: "Location",
-        value: `${exifData.gps.latitude}, ${exifData.gps.longitude}`
+        label: "Dimensions",
+        value: `${exifData.dimensions.width} × ${exifData.dimensions.height}`
       });
+    }
+    
+    // Display GPS coordinates (decimal format)
+    let hasValidGPS = false;
+    let gpsLat = null;
+    let gpsLon = null;
+    if (exifData.gps?.latitude !== null && exifData.gps?.longitude !== null) {
+      gpsLat = exifData.gps.latitude;
+      gpsLon = exifData.gps.longitude;
+      if (typeof gpsLat === 'number' && typeof gpsLon === 'number' && 
+          gpsLat >= -90 && gpsLat <= 90 && gpsLon >= -180 && gpsLon <= 180) {
+        hasValidGPS = true;
+        exifFields.push({
+          label: "Location",
+          value: `${gpsLat.toFixed(6)}, ${gpsLon.toFixed(6)}`
+        });
+      }
     }
     
     exifFields.forEach((field) => {
@@ -611,6 +1084,18 @@
       div.appendChild(strong);
       div.appendChild(document.createTextNode(field.value));
       exifDisplay.appendChild(div);
+      
+      // Add Google Maps link after Location field
+      if (hasValidGPS && field.label === "Location") {
+        const mapsLink = document.createElement("a");
+        mapsLink.href = `https://www.google.com/maps?q=${gpsLat},${gpsLon}`;
+        mapsLink.target = "_blank";
+        mapsLink.rel = "noopener noreferrer";
+        mapsLink.textContent = "View on Google Maps";
+        mapsLink.style.cssText = "color: var(--accent); margin-top: 4px; display: inline-block;";
+        div.appendChild(document.createElement("br"));
+        div.appendChild(mapsLink);
+      }
     });
 
     exifSection.appendChild(exifTitle);
@@ -807,37 +1292,75 @@
       const keywordsToAdd = keywordsStr.split(",").map(k => k.trim()).filter(k => k);
       const categoryUpdate = formData.get("category");
 
+      if (!keywordsToAdd.length && !categoryUpdate) {
+        alert("Please provide keywords or select a category to update.");
+        return;
+      }
+
+      bulkModal.remove();
+      showBulkProgress(true);
+      
+      let completed = 0;
+      const total = selected.length;
       const batch = db.batch();
+      const updates = [];
+      
       for (const id of selected) {
-        const docRef = db.collection("gallery").doc(id);
-        const docSnap = await docRef.get();
-        if (!docSnap.exists) continue;
-        
-        const data = docSnap.data();
-        const currentMetadata = data.metadata || {};
-        const currentKeywords = Array.isArray(currentMetadata.keywords) ? currentMetadata.keywords : [];
-        
-        const updates = {};
-        if (keywordsToAdd.length) {
-          const newKeywords = [...new Set([...currentKeywords, ...keywordsToAdd])];
-          // Update entire metadata object to avoid nested field path issues
-          updates.metadata = {
-            ...currentMetadata,
-            keywords: newKeywords,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          };
-        }
-        if (categoryUpdate) {
-          updates.category = categoryUpdate;
-        }
-        if (Object.keys(updates).length) {
-          batch.update(docRef, updates);
+        try {
+          updateBulkProgress(completed, total, `Updating ${completed + 1} of ${total}...`);
+          const docRef = db.collection("gallery").doc(id);
+          const docSnap = await docRef.get();
+          if (!docSnap.exists) {
+            completed++;
+            continue;
+          }
+          
+          const data = docSnap.data();
+          const currentMetadata = data.metadata || {};
+          const currentKeywords = Array.isArray(currentMetadata.keywords) ? currentMetadata.keywords : [];
+          
+          const updateData = {};
+          if (keywordsToAdd.length) {
+            const newKeywords = [...new Set([...currentKeywords, ...keywordsToAdd])];
+            // Update entire metadata object to avoid nested field path issues
+            updateData.metadata = {
+              ...currentMetadata,
+              keywords: newKeywords,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            };
+          }
+          if (categoryUpdate) {
+            updateData.category = categoryUpdate;
+          }
+          if (Object.keys(updateData).length) {
+            batch.update(docRef, updateData);
+            updates.push(id);
+          }
+          completed++;
+          updateBulkProgress(completed, total, `Processing ${completed} of ${total}...`);
+        } catch (err) {
+          console.error("Update error:", err);
+          completed++;
+          updateBulkProgress(completed, total, `Error updating...`);
         }
       }
 
-      await batch.commit();
-      alert(`Updated ${selected.length} image(s).`);
-      bulkModal.remove();
+      try {
+        if (updates.length > 0) {
+          await batch.commit();
+          updateBulkProgress(completed, total, `Successfully updated ${updates.length} image(s).`);
+        } else {
+          updateBulkProgress(completed, total, `No updates to apply.`);
+        }
+      } catch (err) {
+        console.error("Batch commit error:", err);
+        updateBulkProgress(completed, total, `Error: ${err.message || "Failed to update"}`);
+      }
+      
+      setTimeout(() => {
+        showBulkProgress(false);
+      }, 2000);
+      
       await loadGallery();
     });
 

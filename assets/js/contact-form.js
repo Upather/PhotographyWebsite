@@ -112,13 +112,14 @@
     // Name validation
     nameInput?.addEventListener('blur', () => validateName());
     nameInput?.addEventListener('input', () => {
-      if (validationState.name.message) validateName();
+      updateCharacterCounter(nameInput, nameInput.value.length, 100);
+      if (validationState.name.message || validationState.name.valid) validateName();
     });
 
     // Email validation
     emailInput?.addEventListener('blur', () => validateEmail());
     emailInput?.addEventListener('input', () => {
-      if (validationState.email.message) validateEmail();
+      if (validationState.email.message || validationState.email.valid) validateEmail();
     });
 
     // Service validation
@@ -127,8 +128,58 @@
     // Message validation
     messageTextarea?.addEventListener('blur', () => validateMessage());
     messageTextarea?.addEventListener('input', () => {
-      if (validationState.message.message) validateMessage();
+      updateCharacterCounter(messageTextarea, messageTextarea.value.length, 2000);
+      if (validationState.message.message || validationState.message.valid) validateMessage();
     });
+
+    // Initialize character counters
+    setupCharacterCounters();
+  }
+
+  // Character counter functionality
+  function setupCharacterCounters() {
+    // Add counter for name field
+    if (nameInput) {
+      const nameCounter = document.createElement('span');
+      nameCounter.className = 'character-counter';
+      nameCounter.setAttribute('data-field', 'name');
+      nameInput.parentElement.appendChild(nameCounter);
+      updateCharacterCounter(nameInput, nameInput.value.length, 100);
+    }
+
+    // Add counter for message field
+    if (messageTextarea) {
+      const messageCounter = document.createElement('span');
+      messageCounter.className = 'character-counter';
+      messageCounter.setAttribute('data-field', 'message');
+      messageTextarea.parentElement.appendChild(messageCounter);
+      updateCharacterCounter(messageTextarea, messageTextarea.value.length, 2000);
+    }
+  }
+
+  function updateCharacterCounter(field, current, max) {
+    if (!field) return;
+    
+    const counter = field.parentElement.querySelector('.character-counter');
+    if (!counter) return;
+    
+    const percentage = (current / max) * 100;
+    counter.textContent = `${current} / ${max}`;
+    counter.setAttribute('data-percentage', percentage.toFixed(0));
+    
+    // Add warning class if approaching limit
+    if (percentage >= 90) {
+      counter.classList.add('warning');
+    } else {
+      counter.classList.remove('warning');
+    }
+    
+    // Add error class if over limit
+    if (current > max) {
+      counter.classList.add('error');
+    } else {
+      counter.classList.remove('error');
+    }
   }
 
   // Validation functions
@@ -164,7 +215,9 @@
     }
 
     clearFieldError(nameInput);
+    setFieldValid(nameInput);
     validationState.name = { valid: true, message: '' };
+    updateCharacterCounter(nameInput, value.length, 100);
     return true;
   }
 
@@ -201,6 +254,7 @@
     }
 
     clearFieldError(emailInput);
+    setFieldValid(emailInput);
     validationState.email = { valid: true, message: '' };
     return true;
   }
@@ -215,6 +269,7 @@
     }
 
     clearFieldError(serviceSelect);
+    setFieldValid(serviceSelect);
     validationState.service = { valid: true, message: '' };
     return true;
   }
@@ -243,7 +298,9 @@
     }
 
     clearFieldError(messageTextarea);
+    setFieldValid(messageTextarea);
     validationState.message = { valid: true, message: '' };
+    updateCharacterCounter(messageTextarea, value.length, 2000);
     return true;
   }
 
@@ -253,10 +310,12 @@
     
     field.setAttribute('aria-invalid', 'true');
     field.classList.add('error');
+    field.classList.remove('valid');
     
-    // Remove existing error message
+    // Remove existing error message and success indicator
     const existingError = field.parentElement.querySelector('.field-error');
     if (existingError) existingError.remove();
+    removeFieldSuccessIndicator(field);
 
     // Add error message
     const errorMsg = document.createElement('span');
@@ -274,6 +333,42 @@
     
     const errorMsg = field.parentElement.querySelector('.field-error');
     if (errorMsg) errorMsg.remove();
+  }
+
+  function setFieldValid(field) {
+    if (!field) return;
+    
+    field.setAttribute('aria-invalid', 'false');
+    field.classList.remove('error');
+    field.classList.add('valid');
+    
+    // Remove error message if exists
+    const errorMsg = field.parentElement.querySelector('.field-error');
+    if (errorMsg) errorMsg.remove();
+    
+    // Add success indicator
+    addFieldSuccessIndicator(field);
+  }
+
+  function addFieldSuccessIndicator(field) {
+    if (!field) return;
+    
+    // Check if indicator already exists
+    if (field.parentElement.querySelector('.field-success-indicator')) return;
+    
+    const indicator = document.createElement('span');
+    indicator.className = 'field-success-indicator';
+    indicator.setAttribute('aria-hidden', 'true');
+    indicator.innerHTML = '<svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fill="currentColor"/></svg>';
+    field.parentElement.appendChild(indicator);
+  }
+
+  function removeFieldSuccessIndicator(field) {
+    if (!field) return;
+    
+    const indicator = field.parentElement.querySelector('.field-success-indicator');
+    if (indicator) indicator.remove();
+    field.classList.remove('valid');
   }
 
   // Validate all fields
@@ -415,6 +510,8 @@
   function clearAllFieldErrors() {
     [nameInput, emailInput, serviceSelect, messageTextarea].forEach(field => {
       clearFieldError(field);
+      removeFieldSuccessIndicator(field);
+      field?.classList.remove('valid');
     });
   }
 

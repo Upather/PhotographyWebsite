@@ -279,26 +279,45 @@
                 id="upload-progress"
                 style="
                   margin-top: 10px;
-                  height: 8px;
-                  background: #1b1b1e;
-                  border: 1px solid var(--border);
-                  border-radius: 8px;
-                  overflow: hidden;
                   display: none;
                 "
               >
                 <div
-                  id="upload-bar"
                   style="
-                    height: 100%;
-                    width: 0;
-                    background: linear-gradient(
-                      90deg,
-                      var(--text),
-                      var(--accent-2)
-                    );
+                    height: 8px;
+                    background: #1b1b1e;
+                    border: 1px solid var(--border);
+                    border-radius: 8px;
+                    overflow: hidden;
+                    margin-bottom: 12px;
                   "
-                ></div>
+                >
+                  <div
+                    id="upload-bar"
+                    style="
+                      height: 100%;
+                      width: 0;
+                      background: linear-gradient(
+                        90deg,
+                        var(--text),
+                        var(--accent-2)
+                      );
+                      transition: width 0.3s ease;
+                    "
+                  ></div>
+                </div>
+                <div
+                  id="upload-details"
+                  style="
+                    font-size: 13px;
+                    color: var(--muted);
+                    line-height: 1.6;
+                  "
+                >
+                  <div id="upload-speed" style="margin-bottom: 4px;"></div>
+                  <div id="upload-eta" style="margin-bottom: 4px;"></div>
+                  <div id="upload-files-list" style="margin-top: 8px; max-height: 200px; overflow-y: auto;"></div>
+                </div>
               </div>
               <div
                 id="upload-status"
@@ -327,7 +346,55 @@
               >
                 Delete Selected
               </button>
+              <button
+                id="select-all"
+                class="btn btn-small"
+                style="margin-left: 6px"
+              >
+                Select All
+              </button>
+              <button
+                id="deselect-all"
+                class="btn btn-small"
+                style="margin-left: 6px"
+              >
+                Deselect All
+              </button>
               <p class="muted">Drag tiles using the handle to reorder.</p>
+              <div
+                id="bulk-operation-progress"
+                style="
+                  margin-top: 10px;
+                  display: none;
+                  padding: 12px;
+                  background: #1a1a1c;
+                  border: 1px solid var(--border);
+                  border-radius: 8px;
+                "
+              >
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span id="bulk-operation-status" style="color: var(--text); font-size: 14px;"></span>
+                  <span id="bulk-operation-count" style="color: var(--muted); font-size: 13px;"></span>
+                </div>
+                <div
+                  style="
+                    height: 6px;
+                    background: #0f0f10;
+                    border-radius: 4px;
+                    overflow: hidden;
+                  "
+                >
+                  <div
+                    id="bulk-operation-bar"
+                    style="
+                      height: 100%;
+                      width: 0;
+                      background: linear-gradient(90deg, var(--text), var(--accent-2));
+                      transition: width 0.3s ease;
+                    "
+                  ></div>
+                </div>
+              </div>
             </section>
             <section class="admin-card admin-col-12">
               <h3>Image Metadata & SEO Management</h3>
@@ -367,6 +434,26 @@
               <h3>User Management</h3>
               <div class="form-grid" style="margin-top: 8px">
                 <label>
+                  <span>Search Users</span>
+                  <input
+                    id="user-search"
+                    type="text"
+                    placeholder="Search by UID or email..."
+                    autocapitalize="none"
+                    spellcheck="false"
+                  />
+                </label>
+                <label>
+                  <span>Filter by Role</span>
+                  <select id="user-filter-role">
+                    <option value="all">All Roles</option>
+                    <option value="admin">Admin</option>
+                    <option value="member">Member</option>
+                  </select>
+                </label>
+              </div>
+              <div class="form-grid" style="margin-top: 12px">
+                <label>
                   <span>User UID</span>
                   <input
                     id="user-uid"
@@ -395,7 +482,12 @@
                 </div>
               </div>
               <div style="margin-top: 12px">
-                <h4 style="margin-bottom: 6px">Users</h4>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <h4 style="margin: 0;">Users</h4>
+                  <button id="refresh-users" class="btn btn-small" type="button" style="font-size: 12px; padding: 4px 8px;">
+                    Refresh
+                  </button>
+                </div>
                 <div id="users-list" class="muted">No users loaded yet.</div>
               </div>
             </section>

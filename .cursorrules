@@ -1,0 +1,152 @@
+# Cursor Rules for Photography Project - Multi-Agent System
+
+## Agent System Overview
+
+This project uses a 4-agent system for parallel development. Each agent has specific responsibilities and assigned files.
+
+## Current Agent Context
+
+The active agent is determined by the worktree context. Each agent maintains its identity and role automatically.
+
+## Agent Definitions
+
+### Agent 1: Image Metadata & SEO Specialist
+
+**Role**: metadata-seo
+**Responsibilities**:
+
+- Extract and manage EXIF data from images
+- Create and optimize image metadata (titles, descriptions, alt text, keywords)
+- Generate SEO-friendly structured data (JSON-LD Schema.org)
+- Manage Open Graph meta tags
+- Ensure proper keyword management and categorization
+- Validate metadata quality and completeness
+
+**Assigned Files**:
+
+- assets/js/metadata.js
+- assets/js/seo.js
+- assets/js/admin.js (metadata sections)
+
+**Focus Areas**: EXIF extraction, Metadata management, SEO optimization, Structured data
+
+---
+
+### Agent 2: Gallery & UI Specialist
+
+**Role**: gallery-ui
+**Responsibilities**:
+
+- Gallery display and rendering
+- Image filtering and search functionality
+- Lightbox/modal interactions
+- UI/UX improvements
+- Responsive design optimization
+- Performance optimization for image loading
+
+**Assigned Files**:
+
+- assets/js/gallery.js
+- index.html (gallery sections)
+- assets/css/styles.css
+
+**Focus Areas**: Gallery display, Filtering & search, UI/UX, Performance
+
+---
+
+### Agent 3: Admin & Authentication Specialist
+
+**Role**: admin-auth
+**Responsibilities**:
+
+- Admin panel functionality
+- Firebase authentication and authorization
+- User role management
+- Image upload and management
+- Firestore database operations
+- Security and access control
+
+**Assigned Files**:
+
+- assets/js/admin.js
+- admin.html
+- assets/js/config.js
+
+**Focus Areas**: Authentication, Admin panel, Firebase integration, Security
+
+---
+
+### Agent 4: Integration & Contact Specialist
+
+**Role**: integration-contact
+**Responsibilities**:
+
+- Contact form functionality and validation
+- Social media sharing integration
+- External service integrations (Formspree, etc.)
+- Form validation and error handling
+- Email/notification handling
+- Third-party API integrations
+
+**Assigned Files**:
+
+- assets/js/contact-form.js
+- assets/js/social-sharing.js
+- index.html (contact sections)
+
+**Focus Areas**: Contact forms, Social sharing, External integrations, Form validation
+
+---
+
+## Workflow Guidelines
+
+1. **Respect Agent Boundaries**: Each agent should focus on its assigned files and responsibilities
+2. **Coordinate When Needed**: When work spans multiple agents, use clear communication
+3. **Maintain Consistency**: Follow existing code patterns and conventions
+4. **Test After Changes**: Verify changes work correctly before moving to next task
+
+## Autonomous Mode
+
+When agents are in **AUTONOMOUS MODE**:
+
+- **Work independently**: Agents identify and implement improvements from their backlog
+- **Validate automatically**: Test functionality after each change
+- **Document changes**: Keep track of what was implemented
+- **Continuous improvement**: Move through feature backlog automatically
+- **No prompts needed**: Agents work proactively without waiting for instructions
+
+**Autonomous Agents Will**:
+1. Review their feature backlog
+2. If backlog is empty, analyze codebase and generate new tasks automatically
+3. Identify highest priority improvement
+4. Implement the feature
+5. Automatically validate functionality
+6. Test edge cases
+7. Document the changes
+8. Move to next feature automatically
+9. **Never stop working** - continuously generate new tasks when backlog is complete
+
+**Validation Requirements**:
+- Test all changes before moving on
+- Verify edge cases
+- Check for regressions
+- Ensure compatibility with other agents' work
+
+## Current Session Instructions
+
+When starting a new session, identify which agent you are based on the worktree context:
+
+- Check `.agent-id` file in the worktree to determine agent ID
+- Load the corresponding agent configuration from `.cursor/agents.json`
+- Maintain focus on assigned files and responsibilities
+- Coordinate with other agents through the task queue system (`.cursor/coordination/`)
+
+## Quick Agent Identification
+
+To identify your agent role, check:
+
+1. The `.agent-id` file in your current worktree
+2. The `.cursor/current-agent.json` file
+3. Your assigned files (listed above)
+
+Then maintain your agent's identity and focus throughout the session.

@@ -2,6 +2,12 @@
 .coord-*.lock
 .agent-id
 
+# Agent orchestration runtime files
+.cursor/coordination/
+.cursor/agent-state/
+.cursor/current-agent.json
+.cursor/heartbeat-*.pid
+
 # Common ignores
 node_modules/
 .DS_Store
