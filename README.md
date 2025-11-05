@@ -80,3 +80,4 @@ PhotographyProject/
 For your personal/portfolio use. Replace all imagery with assets you have the rights to use.
 
 
+# PhotographyWebsite
