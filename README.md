@@ -64,6 +64,42 @@ service firebase.storage {
 
 Public site will auto-load images from Firestore if `assets/js/config.js` is present; otherwise it shows the built-in placeholders.
 
+## Social Sharing Features
+
+The portfolio includes social sharing functionality for individual images:
+
+### Features
+- **Social Media Sharing**: Share images to Facebook, Twitter, Pinterest, and Instagram
+- **Copy Link**: Copy shareable URLs for individual portfolio images
+- **Open Graph & Twitter Cards**: Enhanced meta tags for better social media previews
+- **Instagram Feed Integration**: Optional Instagram gallery embedding
+
+### Configuration
+
+#### Social Sharing URLs
+Edit `assets/js/social-sharing.js` to customize:
+- `baseUrl`: Your website's base URL for shareable links
+- `defaultTitle`: Default title for shared content
+- `defaultDescription`: Default description for shared content
+
+#### Instagram Feed Setup
+To enable the Instagram feed section:
+
+1. Get an Instagram Access Token:
+   - Use Instagram Basic Display API or Instagram Graph API
+   - For Graph API: Create a Facebook App and get an access token
+   - Add the token to `assets/js/social-sharing.js` in the `config` object:
+     ```javascript
+     instagramAccessToken: 'YOUR_ACCESS_TOKEN_HERE'
+     ```
+
+2. The feed will automatically load and display your latest Instagram posts.
+
+**Note**: Instagram API requires authentication and proper setup. The feed section will show a placeholder message if the token is not configured.
+
+### Custom Shareable URLs
+Images can be shared with custom URLs in the format: `yourdomain.com#image/{imageId}`. When someone visits this URL, the corresponding image will automatically open in the lightbox.
+
 ## Structure
 
 ```

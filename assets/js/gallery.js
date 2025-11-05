@@ -6,19 +6,28 @@
   function render(items) {
     if (!grid) return;
     grid.innerHTML = "";
-    items.forEach((it) => {
+    items.forEach((it, index) => {
       const figure = document.createElement("figure");
       figure.className = "portfolio-item";
       figure.setAttribute("data-category", String(it.category || "campaign"));
+      
+      // Add image ID for social sharing
+      const imageId = it.id || `img-${it.category || "campaign"}-${index}`;
+      figure.setAttribute("data-image-id", imageId);
 
       const img = document.createElement("img");
       img.setAttribute("src", String(it.url || ""));
-      img.setAttribute("alt", String(it.caption || "Portfolio image"));
+      img.setAttribute("alt", String(it.metadata?.altText || it.metadata?.title || it.caption || "Portfolio image"));
       img.setAttribute("loading", "lazy");
       img.setAttribute("decoding", "async");
+      
+      // Add title attribute for better SEO
+      if (it.metadata?.title) {
+        img.setAttribute("title", it.metadata.title);
+      }
 
       const caption = document.createElement("figcaption");
-      caption.textContent = String(it.caption || "");
+      caption.textContent = String(it.metadata?.title || it.caption || "");
 
       figure.appendChild(img);
       figure.appendChild(caption);
@@ -47,19 +56,26 @@
   });
 
   async function initDynamic() {
-    if (!window.firebaseConfig) return false;
+    if (!window.firebaseConfig || typeof firebase === 'undefined') return false;
     try {
-      const app = firebase.initializeApp(window.firebaseConfig, "public");
+      let app;
+      try {
+        app = firebase.app("public");
+      } catch (e) {
+        app = firebase.initializeApp(window.firebaseConfig, "public");
+      }
       const db = firebase.firestore(app);
       const snap = await db.collection("gallery").orderBy("order").get();
-      const items = snap.docs.map((d) => d.data());
+      const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       if (items.length) {
         render(items);
         // Re-bind lightbox from script.js
         if (window.initLightbox) window.initLightbox();
         return true;
       }
-    } catch (_) {}
+    } catch (err) {
+      console.warn("Failed to load dynamic gallery:", err);
+    }
     return false;
   }
 
