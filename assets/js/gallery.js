@@ -67,6 +67,10 @@
         render(items);
         // Re-bind lightbox from script.js
         if (window.initLightbox) window.initLightbox();
+        // Re-initialize social sharing if available
+        if (window.socialSharing && window.socialSharing.initLightboxSharing) {
+          window.socialSharing.initLightboxSharing();
+        }
         return true;
       }
     } catch (err) {
