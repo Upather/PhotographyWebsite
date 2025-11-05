@@ -28,6 +28,14 @@
       content="Professional fashion photography services for SA Fashion Week, Soweto Fashion Week, and exclusive bookings."
     />
     <meta property="og:type" content="website" />
+    <meta property="og:image" content="" />
+    <meta property="og:url" content="" />
+    <meta property="og:site_name" content="Professional Fashion Photography" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Professional Fashion Photography — SA Fashion Week & Soweto Fashion Week" />
+    <meta name="twitter:description" content="Professional fashion photography services for SA Fashion Week, Soweto Fashion Week, and exclusive bookings." />
+    <meta name="twitter:image" content="" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -187,6 +195,24 @@
         </div>
       </section>
 
+      <!-- Instagram Feed -->
+      <section id="instagram-feed" class="section instagram-section">
+        <div class="container">
+          <div class="section-intro">
+            <h2 class="section-title">Follow on Instagram</h2>
+            <p class="section-description">See our latest work and behind-the-scenes moments.</p>
+          </div>
+          <div class="instagram-feed-grid" id="instagram-feed-grid">
+            <!-- Instagram posts will be loaded here -->
+          </div>
+          <div class="instagram-feed-cta">
+            <a href="https://www.instagram.com/photographer" target="_blank" rel="noopener noreferrer" class="btn btn-outline">
+              View on Instagram
+            </a>
+          </div>
+        </div>
+      </section>
+
       <!-- About -->
       <section id="about" class="section about-section">
         <div class="container about-container">
@@ -281,16 +307,19 @@
     </footer>
 
     <div class="lightbox" id="lightbox" aria-modal="true" aria-hidden="true" role="dialog">
-      <button class="lightbox-close" aria-label="Close">×</button>
+      <button class="lightbox-close" aria-label="Close lightbox">×</button>
       <img class="lightbox-image" alt="Expanded work image" />
       <p class="lightbox-caption"></p>
+      <!-- Social sharing buttons will be added here dynamically -->
     </div>
 
     <!-- Firebase for dynamic gallery -->
     <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
     <script defer src="assets/js/config.js"></script>
+    <script defer src="assets/js/seo.js"></script>
     <script defer src="assets/js/script.js"></script>
     <script defer src="assets/js/gallery.js"></script>
+    <script defer src="assets/js/social-sharing.js"></script>
   </body>
 </html>
