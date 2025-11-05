@@ -426,11 +426,72 @@ h3 {
   margin: 0 auto;
 }
 
+/* Multi-channel contact options */
+.contact-channels {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: var(--spacing-lg);
+}
+
+.contact-channel-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 12px 20px;
+  border-radius: 24px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.contact-channel-btn:hover {
+  background: var(--bg-secondary);
+  border-color: var(--text);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.contact-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.contact-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: var(--spacing-lg) 0;
+  position: relative;
+}
+
+.contact-divider::before,
+.contact-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.contact-divider span {
+  padding: 0 var(--spacing-md);
+  color: var(--text-secondary);
+  font-size: 14px;
+  background: var(--bg);
+}
+
 .contact-form {
   background: var(--bg-secondary);
   padding: var(--spacing-xl);
   border-radius: 20px;
   margin-top: var(--spacing-lg);
+  position: relative;
 }
 
 .form-grid {
@@ -487,6 +548,79 @@ h3 {
   color: var(--text-secondary);
   margin-top: var(--spacing-sm);
   text-align: center;
+}
+
+/* Form messages (success/error) */
+.form-messages {
+  padding: var(--spacing-md);
+  border-radius: 12px;
+  margin-bottom: var(--spacing-md);
+  font-size: 15px;
+  font-weight: 500;
+  display: none;
+  animation: slideIn 0.3s ease;
+}
+
+.form-messages.show {
+  display: block;
+}
+
+.form-error {
+  background: #fee;
+  color: #c00;
+  border: 1px solid #fcc;
+}
+
+.form-success {
+  background: #efe;
+  color: #060;
+  border: 1px solid #cfc;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Field error states */
+.contact-form input.error,
+.contact-form select.error,
+.contact-form textarea.error {
+  border-color: #c00;
+  background: #fff5f5;
+}
+
+.contact-form input.error:focus,
+.contact-form select.error:focus,
+.contact-form textarea.error:focus {
+  border-color: #c00;
+  box-shadow: 0 0 0 3px rgba(204, 0, 0, 0.1);
+}
+
+.field-error {
+  display: block;
+  color: #c00;
+  font-size: 13px;
+  margin-top: 4px;
+  font-weight: 400;
+}
+
+/* Submit button loading state */
+.contact-form button[type="submit"][aria-busy="true"] {
+  opacity: 0.7;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.contact-form button[type="submit"]:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 /* Footer */
@@ -639,6 +773,15 @@ h3 {
     grid-template-columns: 1fr;
   }
 
+  .contact-channels {
+    flex-direction: column;
+  }
+
+  .contact-channel-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
   .footer-inner {
     flex-direction: column;
     gap: var(--spacing-sm);
@@ -656,4 +799,159 @@ h3 {
 [data-reveal].visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* Social Sharing */
+.social-share-container {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.social-share-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  justify-content: center;
+  align-items: center;
+}
+
+.social-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.social-share-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+.social-share-btn svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.social-share-btn.facebook:hover {
+  background: rgba(24, 119, 242, 0.3);
+  border-color: rgba(24, 119, 242, 0.6);
+}
+
+.social-share-btn.twitter:hover {
+  background: rgba(29, 161, 242, 0.3);
+  border-color: rgba(29, 161, 242, 0.6);
+}
+
+.social-share-btn.pinterest:hover {
+  background: rgba(189, 8, 28, 0.3);
+  border-color: rgba(189, 8, 28, 0.6);
+}
+
+.social-share-btn.instagram:hover {
+  background: rgba(225, 48, 108, 0.3);
+  border-color: rgba(225, 48, 108, 0.6);
+}
+
+.social-share-btn.copy-link:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+@media (max-width: 768px) {
+  .social-share-btn span {
+    display: none;
+  }
+  
+  .social-share-btn {
+    padding: 10px;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    justify-content: center;
+  }
+  
+  .social-share-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* Share Notification */
+.share-notification {
+  position: fixed;
+  bottom: var(--spacing-lg);
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--text);
+  color: var(--bg);
+  padding: 12px 24px;
+  border-radius: 24px;
+  font-size: 15px;
+  font-weight: 500;
+  z-index: 10000;
+  opacity: 0;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-lg);
+}
+
+.share-notification.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Instagram Feed */
+.instagram-feed-section {
+  background: var(--bg-secondary);
+  padding: var(--spacing-2xl) 0;
+}
+
+#instagram-feed {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+}
+
+.instagram-feed-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.instagram-feed-item:hover {
+  transform: scale(1.05);
+}
+
+.instagram-feed-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.instagram-feed-placeholder {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--text-secondary);
+}
+
+.instagram-feed-placeholder code {
+  background: var(--bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
 }
