@@ -45,6 +45,7 @@
   const deleteSelectedBtn = document.getElementById("delete-selected");
   const defaultCaptionInput = document.getElementById("default-caption");
   const defaultCategorySelect = document.getElementById("default-category");
+  const defaultSectionSelect = document.getElementById("default-section");
   const uploadProgress = document.getElementById("upload-progress");
   const uploadBar = document.getElementById("upload-bar");
   const userUidInput = document.getElementById("user-uid");
@@ -166,8 +167,41 @@
     fileInput.value = "";
   });
 
+  // Image resizing function
+  function resizeImage(file, maxWidth = 1920, maxHeight = 1920, quality = 0.85) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Calculate new dimensions
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = width * ratio;
+            height = height * ratio;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob((blob) => {
+            resolve(blob || file);
+          }, file.type, quality);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   async function uploadFiles(files) {
-    setStatus(`Uploading ${files.length} file(s)...`);
+    setStatus(`Processing and uploading ${files.length} file(s)...`);
     const now = Date.now();
     let completed = 0;
     if (uploadProgress && uploadBar) {
@@ -176,10 +210,13 @@
     }
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+      // Resize image before upload
+      setStatus(`Processing image ${i + 1}/${files.length}...`);
+      const resizedFile = await resizeImage(file);
       const path = `gallery/${now}-${i}-${file.name}`;
       const ref = storage.ref().child(path);
       await new Promise((resolve, reject) => {
-        const task = ref.put(file);
+        const task = ref.put(resizedFile);
         task.on(
           "state_changed",
           (snap) => {
@@ -197,7 +234,9 @@
               const orderVal = await nextOrderValue();
               const captionDefault = (defaultCaptionInput?.value || "").trim();
               const categoryDefault =
-                defaultCategorySelect?.value || "campaign";
+                defaultCategorySelect?.value || "fashion-events";
+              const sectionDefault =
+                defaultSectionSelect?.value || "fashion";
               
               // Extract EXIF data if EXIF library is available
               let exifData = {};
@@ -246,6 +285,7 @@
                 path,
                 caption: captionDefault || file.name,
                 category: categoryDefault,
+                section: sectionDefault,
                 order: orderVal,
                 metadata: {
                   title: captionDefault || file.name,
@@ -402,11 +442,11 @@
           item.remove();
         });
 
-      // Edit metadata handler
+      // Edit metadata handler - simple one-click form
       item
         .querySelector('[data-action="edit"]')
         ?.addEventListener("click", () => {
-          openMetadataEditor(doc.id, data);
+          openSimpleEditor(doc.id, data);
         });
     });
   }
@@ -525,7 +565,162 @@
     }
   });
 
-  // Metadata editor modal
+  // Simple one-click editor - title, category, caption all in one form
+  function openSimpleEditor(imageId, imageData) {
+    const modal = document.createElement("div");
+    modal.className = "simple-editor-modal";
+    modal.style.cssText = `
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 20px;
+    `;
+
+    const modalContent = document.createElement("div");
+    modalContent.style.cssText = `
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 500px;
+      width: 100%;
+    `;
+
+    const title = document.createElement("h3");
+    title.textContent = "Edit Portfolio Item";
+    title.style.marginBottom = "20px";
+
+    const form = document.createElement("form");
+    form.className = "form-grid";
+
+    const titleInput = createFormField("Title", "title", imageData.metadata?.title || imageData.caption || "");
+    const captionInput = createFormField("Caption", "caption", imageData.caption || "");
+
+    const sectionSelect = document.createElement("label");
+    sectionSelect.className = "full";
+    sectionSelect.style.cssText = "display: flex; flex-direction: column; gap: 8px;";
+    const sectionSpan = document.createElement("span");
+    sectionSpan.textContent = "Portfolio Section";
+    sectionSpan.style.fontSize = "15px";
+    sectionSpan.style.fontWeight = "500";
+    const sectionSelectEl = document.createElement("select");
+    sectionSelectEl.name = "section";
+    sectionSelectEl.style.cssText = `
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
+    `;
+    sectionSelectEl.innerHTML = `
+      <option value="fashion" ${imageData.section === "fashion" ? "selected" : ""}>Fashion</option>
+      <option value="photo-shoots" ${imageData.section === "photo-shoots" ? "selected" : ""}>Photo Shoots</option>
+      <option value="agency-portfolio" ${imageData.section === "agency-portfolio" ? "selected" : ""}>Agency Portfolio Shoots</option>
+    `;
+    sectionSelect.appendChild(sectionSpan);
+    sectionSelect.appendChild(sectionSelectEl);
+
+    const categorySelect = document.createElement("label");
+    categorySelect.className = "full";
+    categorySelect.style.cssText = "display: flex; flex-direction: column; gap: 8px;";
+    const catSpan = document.createElement("span");
+    catSpan.textContent = "Category";
+    catSpan.style.fontSize = "15px";
+    catSpan.style.fontWeight = "500";
+    const categorySelectEl = document.createElement("select");
+    categorySelectEl.name = "category";
+    categorySelectEl.style.cssText = `
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
+    `;
+    categorySelectEl.innerHTML = `
+      <option value="fashion-events" ${imageData.category === "fashion-events" ? "selected" : ""}>Fashion Events</option>
+      <option value="fashion-photography" ${imageData.category === "fashion-photography" ? "selected" : ""}>Fashion Photography</option>
+      <option value="portraits-headshots" ${imageData.category === "portraits-headshots" ? "selected" : ""}>Portraits & Headshots</option>
+      <option value="model-portfolios" ${imageData.category === "model-portfolios" ? "selected" : ""}>Model Portfolios</option>
+      <option value="actor-portfolios" ${imageData.category === "actor-portfolios" ? "selected" : ""}>Actor Portfolios</option>
+      <option value="lifestyle" ${imageData.category === "lifestyle" ? "selected" : ""}>Lifestyle</option>
+      <option value="events" ${imageData.category === "events" ? "selected" : ""}>Events</option>
+    `;
+    categorySelect.appendChild(catSpan);
+    categorySelect.appendChild(categorySelectEl);
+
+    const btnGroup = document.createElement("div");
+    btnGroup.style.cssText = "display: flex; gap: 12px; margin-top: 20px;";
+
+    const saveBtn = document.createElement("button");
+    saveBtn.type = "submit";
+    saveBtn.className = "btn btn-primary";
+    saveBtn.textContent = "Save";
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "btn btn-secondary";
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.addEventListener("click", () => modal.remove());
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const title = formData.get("title") || "";
+      const caption = formData.get("caption") || "";
+      const section = formData.get("section") || "fashion";
+      const category = formData.get("category") || "fashion-events";
+
+      try {
+        const docRef = db.collection("gallery").doc(imageId);
+        await docRef.update({
+          caption: caption,
+          category: category,
+          section: section,
+          metadata: {
+            ...imageData.metadata,
+            title: title,
+            altText: title || caption,
+          },
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        });
+        alert("Portfolio item updated successfully!");
+        modal.remove();
+        await loadGallery();
+      } catch (err) {
+        alert("Failed to update: " + (err.message || "Unknown error"));
+      }
+    });
+
+    btnGroup.appendChild(saveBtn);
+    btnGroup.appendChild(cancelBtn);
+
+    form.appendChild(titleInput);
+    form.appendChild(captionInput);
+    form.appendChild(sectionSelect);
+    form.appendChild(categorySelect);
+    form.appendChild(btnGroup);
+
+    modalContent.appendChild(title);
+    modalContent.appendChild(form);
+    modal.appendChild(modalContent);
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) modal.remove();
+    });
+
+    document.body.appendChild(modal);
+  }
+
+  // Metadata editor modal (advanced - keep for full metadata editing)
   function openMetadataEditor(imageId, imageData) {
     const modal = document.createElement("div");
     modal.className = "metadata-modal";
@@ -778,10 +973,13 @@
     `;
     catSelect.innerHTML = `
       <option value="">No change</option>
-      <option value="safw">SA Fashion Week</option>
-      <option value="sfw">Soweto Fashion Week</option>
-      <option value="editorial">Editorial</option>
-      <option value="campaign">Campaign</option>
+      <option value="fashion-events">Fashion Events</option>
+      <option value="fashion-photography">Fashion Photography</option>
+      <option value="portraits-headshots">Portraits & Headshots</option>
+      <option value="model-portfolios">Model Portfolios</option>
+      <option value="actor-portfolios">Actor Portfolios</option>
+      <option value="lifestyle">Lifestyle</option>
+      <option value="events">Events</option>
     `;
     categorySelect.appendChild(catSpan);
     categorySelect.appendChild(catSelect);
