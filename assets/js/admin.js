@@ -17,11 +17,16 @@
     return;
   }
 
-  // Initialize Firebase
-  const app = firebase.initializeApp(window.firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
-  const storage = firebase.storage();
+  // Initialize Firebase (check if already initialized)
+  let app;
+  try {
+    app = firebase.app();
+  } catch (e) {
+    app = firebase.initializeApp(window.firebaseConfig);
+  }
+  const auth = firebase.auth(app);
+  const db = firebase.firestore(app);
+  const storage = firebase.storage(app);
 
   const authView = document.getElementById("auth-view");
   const appView = document.getElementById("app-view");
@@ -193,12 +198,62 @@
               const captionDefault = (defaultCaptionInput?.value || "").trim();
               const categoryDefault =
                 defaultCategorySelect?.value || "campaign";
+              
+              // Extract EXIF data if EXIF library is available
+              let exifData = {};
+              if (typeof EXIF !== 'undefined') {
+                try {
+                  exifData = await new Promise((resolve, reject) => {
+                    // Set timeout to prevent hanging if EXIF extraction fails silently
+                    const timeout = setTimeout(() => {
+                      resolve({});
+                    }, 5000);
+                    
+                    EXIF.getData(file, function () {
+                      clearTimeout(timeout);
+                      try {
+                        const exposureTime = EXIF.getTag(this, "ExposureTime");
+                        const shutterSpeed = exposureTime ? 
+                          (exposureTime >= 1 ? `${exposureTime}s` : `1/${Math.round(1 / exposureTime)}s`) : "";
+                        
+                        const exif = {
+                          make: EXIF.getTag(this, "Make") || "",
+                          model: EXIF.getTag(this, "Model") || "",
+                          dateTime: EXIF.getTag(this, "DateTime") || EXIF.getTag(this, "DateTimeOriginal") || "",
+                          iso: EXIF.getTag(this, "ISOSpeedRatings") || "",
+                          aperture: EXIF.getTag(this, "FNumber") ? `f/${EXIF.getTag(this, "FNumber")}` : "",
+                          shutterSpeed: shutterSpeed,
+                          focalLength: EXIF.getTag(this, "FocalLength") ? `${Math.round(EXIF.getTag(this, "FocalLength"))}mm` : "",
+                          gps: {
+                            latitude: EXIF.getTag(this, "GPSLatitude") || null,
+                            longitude: EXIF.getTag(this, "GPSLongitude") || null,
+                          },
+                        };
+                        resolve(exif);
+                      } catch (err) {
+                        resolve({});
+                      }
+                    });
+                  });
+                } catch (exifErr) {
+                  console.warn("EXIF extraction failed:", exifErr);
+                  exifData = {};
+                }
+              }
+
               await db.collection("gallery").add({
                 url,
                 path,
                 caption: captionDefault || file.name,
                 category: categoryDefault,
                 order: orderVal,
+                metadata: {
+                  title: captionDefault || file.name,
+                  description: "",
+                  altText: captionDefault || file.name,
+                  keywords: [],
+                  exif: exifData,
+                },
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
               });
               completed += 1;
@@ -262,7 +317,22 @@
       label.style.overflow = "hidden";
       label.style.textOverflow = "ellipsis";
       label.style.whiteSpace = "nowrap";
-      label.textContent = String(data.caption || "");
+      label.textContent = String(data.metadata?.title || data.caption || "");
+
+      // Store metadata attributes for search
+      item.setAttribute("data-title", String(data.metadata?.title || data.caption || ""));
+      item.setAttribute("data-description", String(data.metadata?.description || ""));
+      item.setAttribute("data-keywords", Array.isArray(data.metadata?.keywords) ? data.metadata.keywords.join(" ") : "");
+      item.setAttribute("data-category", String(data.category || ""));
+
+      const editBtn = document.createElement("span");
+      editBtn.className = "edit-btn";
+      editBtn.style.cursor = "pointer";
+      editBtn.style.color = "var(--accent)";
+      editBtn.style.marginRight = "8px";
+      editBtn.setAttribute("data-action", "edit");
+      editBtn.title = "Edit Metadata";
+      editBtn.textContent = "Edit";
 
       const del = document.createElement("span");
       del.className = "danger";
@@ -273,6 +343,7 @@
       meta.appendChild(select);
       meta.appendChild(handle);
       meta.appendChild(label);
+      meta.appendChild(editBtn);
       meta.appendChild(del);
 
       item.appendChild(img);
@@ -315,7 +386,7 @@
       });
       item
         .querySelector('[data-action="delete"]')
-        .addEventListener("click", async () => {
+        ?.addEventListener("click", async () => {
           const id = item.getAttribute("data-id");
           if (!id) return;
           if (!confirm("Delete this image?")) return;
@@ -329,6 +400,13 @@
           }
           await docRef.delete();
           item.remove();
+        });
+
+      // Edit metadata handler
+      item
+        .querySelector('[data-action="edit"]')
+        ?.addEventListener("click", () => {
+          openMetadataEditor(doc.id, data);
         });
     });
   }
@@ -445,6 +523,339 @@
     } catch (err) {
       roleStatus.textContent = (err && err.message) || "Failed to save role.";
     }
+  });
+
+  // Metadata editor modal
+  function openMetadataEditor(imageId, imageData) {
+    const modal = document.createElement("div");
+    modal.className = "metadata-modal";
+    modal.style.cssText = `
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 20px;
+    `;
+
+    const modalContent = document.createElement("div");
+    modalContent.style.cssText = `
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    `;
+
+    const title = document.createElement("h3");
+    title.textContent = "Edit Image Metadata";
+    title.style.marginBottom = "20px";
+
+    const form = document.createElement("form");
+    form.className = "form-grid";
+
+    const titleInput = createFormField("Title", "title", imageData.metadata?.title || imageData.caption || "");
+    const descInput = createFormField("Description", "description", imageData.metadata?.description || "", "textarea");
+    const altInput = createFormField("Alt Text", "altText", imageData.metadata?.altText || imageData.caption || "");
+    const keywordsInput = createFormField("Keywords (comma-separated)", "keywords", Array.isArray(imageData.metadata?.keywords) ? imageData.metadata.keywords.join(", ") : "");
+
+    const exifSection = document.createElement("div");
+    exifSection.style.marginTop = "20px";
+    exifSection.style.paddingTop = "20px";
+    exifSection.style.borderTop = "1px solid var(--border)";
+    
+    const exifTitle = document.createElement("h4");
+    exifTitle.textContent = "EXIF Data";
+    exifTitle.style.marginBottom = "12px";
+    exifTitle.style.fontSize = "18px";
+
+    const exifDisplay = document.createElement("div");
+    exifDisplay.className = "exif-display";
+    exifDisplay.style.cssText = `
+      background: #0a0a0b;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.8;
+    `;
+
+    const exifData = imageData.metadata?.exif || {};
+    
+    // Create EXIF display safely (avoid XSS)
+    const exifFields = [
+      { label: "Camera", value: `${exifData.make || ""} ${exifData.model || ""}`.trim() || "N/A" },
+      { label: "Date", value: exifData.dateTime || "N/A" },
+      { label: "ISO", value: exifData.iso || "N/A" },
+      { label: "Aperture", value: exifData.aperture || "N/A" },
+      { label: "Shutter Speed", value: exifData.shutterSpeed || "N/A" },
+      { label: "Focal Length", value: exifData.focalLength || "N/A" },
+    ];
+    
+    if (exifData.gps?.latitude && exifData.gps?.longitude) {
+      exifFields.push({
+        label: "Location",
+        value: `${exifData.gps.latitude}, ${exifData.gps.longitude}`
+      });
+    }
+    
+    exifFields.forEach((field) => {
+      const div = document.createElement("div");
+      const strong = document.createElement("strong");
+      strong.textContent = `${field.label}: `;
+      div.appendChild(strong);
+      div.appendChild(document.createTextNode(field.value));
+      exifDisplay.appendChild(div);
+    });
+
+    exifSection.appendChild(exifTitle);
+    exifSection.appendChild(exifDisplay);
+
+    const btnGroup = document.createElement("div");
+    btnGroup.style.cssText = "display: flex; gap: 12px; margin-top: 20px;";
+
+    const saveBtn = document.createElement("button");
+    saveBtn.type = "submit";
+    saveBtn.className = "btn btn-primary";
+    saveBtn.textContent = "Save";
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "btn btn-secondary";
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.addEventListener("click", () => modal.remove());
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const keywordsStr = formData.get("keywords") || "";
+      const keywords = keywordsStr.split(",").map(k => k.trim()).filter(k => k);
+      
+      const metadata = {
+        title: formData.get("title") || "",
+        description: formData.get("description") || "",
+        altText: formData.get("altText") || "",
+        keywords: keywords,
+        exif: exifData,
+      };
+
+      const success = await window.metadataManager?.updateImageMetadata(imageId, metadata);
+      if (success) {
+        alert("Metadata saved successfully!");
+        modal.remove();
+        await loadGallery();
+      } else {
+        alert("Failed to save metadata.");
+      }
+    });
+
+    btnGroup.appendChild(saveBtn);
+    btnGroup.appendChild(cancelBtn);
+
+    form.appendChild(titleInput);
+    form.appendChild(descInput);
+    form.appendChild(altInput);
+    form.appendChild(keywordsInput);
+    form.appendChild(exifSection);
+    form.appendChild(btnGroup);
+
+    modalContent.appendChild(title);
+    modalContent.appendChild(form);
+    modal.appendChild(modalContent);
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) modal.remove();
+    });
+
+    document.body.appendChild(modal);
+  }
+
+  function createFormField(label, name, value, type = "input") {
+    const container = document.createElement("label");
+    container.className = "full";
+    container.style.cssText = "display: flex; flex-direction: column; gap: 8px;";
+
+    const span = document.createElement("span");
+    span.textContent = label;
+    span.style.fontSize = "15px";
+    span.style.fontWeight = "500";
+
+    let input;
+    if (type === "textarea") {
+      input = document.createElement("textarea");
+      input.rows = 4;
+    } else {
+      input = document.createElement("input");
+      input.type = "text";
+    }
+    input.name = name;
+    input.value = value;
+    input.style.cssText = `
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
+    `;
+
+    container.appendChild(span);
+    container.appendChild(input);
+    return container;
+  }
+
+  // Bulk edit functionality
+  const bulkEditBtn = document.getElementById("bulk-edit-btn");
+  bulkEditBtn?.addEventListener("click", async () => {
+    const selected = Array.from(galleryAdmin.querySelectorAll(".gallery-item"))
+      .filter((el) => {
+        const cb = el.querySelector(".select-item");
+        return cb && cb.checked;
+      })
+      .map((el) => el.getAttribute("data-id"))
+      .filter(Boolean);
+
+    if (!selected.length) {
+      alert("Please select images to edit.");
+      return;
+    }
+
+    const bulkModal = document.createElement("div");
+    bulkModal.className = "metadata-modal";
+    bulkModal.style.cssText = `
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 20px;
+    `;
+
+    const bulkContent = document.createElement("div");
+    bulkContent.style.cssText = `
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 500px;
+      width: 100%;
+    `;
+
+    const title = document.createElement("h3");
+    title.textContent = `Bulk Edit ${selected.length} Image(s)`;
+    title.style.marginBottom = "20px";
+
+    const form = document.createElement("form");
+    form.className = "form-grid";
+
+    const keywordsInput = createFormField("Add Keywords (comma-separated)", "keywords", "");
+    const categorySelect = document.createElement("label");
+    categorySelect.className = "full";
+    categorySelect.style.cssText = "display: flex; flex-direction: column; gap: 8px;";
+    const catSpan = document.createElement("span");
+    catSpan.textContent = "Update Category (optional)";
+    catSpan.style.fontSize = "15px";
+    catSpan.style.fontWeight = "500";
+    const catSelect = document.createElement("select");
+    catSelect.name = "category";
+    catSelect.style.cssText = `
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
+    `;
+    catSelect.innerHTML = `
+      <option value="">No change</option>
+      <option value="safw">SA Fashion Week</option>
+      <option value="sfw">Soweto Fashion Week</option>
+      <option value="editorial">Editorial</option>
+      <option value="campaign">Campaign</option>
+    `;
+    categorySelect.appendChild(catSpan);
+    categorySelect.appendChild(catSelect);
+
+    const btnGroup = document.createElement("div");
+    btnGroup.style.cssText = "display: flex; gap: 12px; margin-top: 20px;";
+
+    const saveBtn = document.createElement("button");
+    saveBtn.type = "submit";
+    saveBtn.className = "btn btn-primary";
+    saveBtn.textContent = "Apply to Selected";
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "btn btn-secondary";
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.addEventListener("click", () => bulkModal.remove());
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const keywordsStr = formData.get("keywords") || "";
+      const keywordsToAdd = keywordsStr.split(",").map(k => k.trim()).filter(k => k);
+      const categoryUpdate = formData.get("category");
+
+      const batch = db.batch();
+      for (const id of selected) {
+        const docRef = db.collection("gallery").doc(id);
+        const docSnap = await docRef.get();
+        if (!docSnap.exists) continue;
+        
+        const data = docSnap.data();
+        const currentMetadata = data.metadata || {};
+        const currentKeywords = Array.isArray(currentMetadata.keywords) ? currentMetadata.keywords : [];
+        
+        const updates = {};
+        if (keywordsToAdd.length) {
+          const newKeywords = [...new Set([...currentKeywords, ...keywordsToAdd])];
+          // Update entire metadata object to avoid nested field path issues
+          updates.metadata = {
+            ...currentMetadata,
+            keywords: newKeywords,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          };
+        }
+        if (categoryUpdate) {
+          updates.category = categoryUpdate;
+        }
+        if (Object.keys(updates).length) {
+          batch.update(docRef, updates);
+        }
+      }
+
+      await batch.commit();
+      alert(`Updated ${selected.length} image(s).`);
+      bulkModal.remove();
+      await loadGallery();
+    });
+
+    btnGroup.appendChild(saveBtn);
+    btnGroup.appendChild(cancelBtn);
+
+    form.appendChild(keywordsInput);
+    form.appendChild(categorySelect);
+    form.appendChild(btnGroup);
+
+    bulkContent.appendChild(title);
+    bulkContent.appendChild(form);
+    bulkModal.appendChild(bulkContent);
+    bulkModal.addEventListener("click", (e) => {
+      if (e.target === bulkModal) bulkModal.remove();
+    });
+
+    document.body.appendChild(bulkModal);
   });
 
   // Footer year (moved from inline script)
