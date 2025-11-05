@@ -1,0 +1,22 @@
+{
+  "setup-worktree-windows": [
+    "$coordParent = '..'",
+    "for ($i=1; $i -le 8; $i++) {",
+    "  if (!(Test-Path \"$coordParent/.coord-$i.lock\")) {",
+    "    New-Item \"$coordParent/.coord-$i.lock\" -ItemType File -Force | Out-Null",
+    "    Set-Content .agent-id \"$i\"",
+    "    break",
+    "  }",
+    "}"
+  ],
+  "setup-worktree-unix": [
+    "COORD_PARENT='..'",
+    "for i in {1..8}; do",
+    "  if [ ! -f \"$COORD_PARENT/.coord-$i.lock\" ]; then",
+    "    touch \"$COORD_PARENT/.coord-$i.lock\"",
+    "    echo $i > .agent-id",
+    "    break",
+    "  fi",
+    "done"
+  ]
+}

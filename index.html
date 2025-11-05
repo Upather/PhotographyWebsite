@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="x-dns-prefetch-control" content="on" />
+    <meta
+      http-equiv="Referrer-Policy"
+      content="strict-origin-when-cross-origin"
+    />
+    <meta
+      http-equiv="Permissions-Policy"
+      content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), fullscreen=(self)"
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https://images.unsplash.com data: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firestore.googleapis.com https://firebasestorage.googleapis.com https://*.googleapis.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://formspree.io; upgrade-insecure-requests"
+    />
+    <title>Professional Fashion Photography — SA Fashion Week & Soweto Fashion Week</title>
+    <meta
+      name="description"
+      content="Professional fashion photography services for SA Fashion Week, Soweto Fashion Week, and exclusive bookings. Capturing the essence of African fashion."
+    />
+    <meta name="theme-color" content="#ffffff" />
+    <meta property="og:title" content="Professional Fashion Photography — SA Fashion Week & Soweto Fashion Week" />
+    <meta
+      property="og:description"
+      content="Professional fashion photography services for SA Fashion Week, Soweto Fashion Week, and exclusive bookings."
+    />
+    <meta property="og:type" content="website" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+    <link rel="icon" href="assets/images/favicon.png" />
+  </head>
+  <body>
+    <header class="site-header" id="top">
+      <div class="container header-inner">
+        <a href="#top" class="logo">Professional Photography</a>
+        <button
+          class="nav-toggle"
+          aria-controls="primary-nav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="nav-toggle-bar"></span>
+          <span class="nav-toggle-bar"></span>
+          <span class="nav-toggle-bar"></span>
+        </button>
+        <nav id="primary-nav" class="nav" aria-label="Primary">
+          <ul>
+            <li><a href="#portfolio">Work</a></li>
+            <li><a href="#services">Services</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#contact" class="btn-nav">Book</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <!-- Hero -->
+      <section class="hero" aria-label="Hero">
+        <div class="container hero-content">
+          <h1 class="hero-title">Capturing Fashion.<br />Defining Moments.</h1>
+          <p class="hero-subtitle">Professional photography for SA Fashion Week, Soweto Fashion Week, and exclusive bookings.</p>
+          <div class="hero-cta">
+            <a href="#contact" class="btn btn-primary">Book a Session</a>
+            <a href="#portfolio" class="btn btn-secondary">View Portfolio</a>
+          </div>
+        </div>
+        <div class="hero-image" role="img" aria-label="Fashion photography showcase"></div>
+      </section>
+
+      <!-- Services -->
+      <section id="services" class="section services-section">
+        <div class="container">
+          <div class="section-intro">
+            <h2 class="section-title">Services</h2>
+            <p class="section-description">Professional photography services for South Africa's premier fashion events and exclusive bookings.</p>
+          </div>
+          
+          <div class="services-grid">
+            <article class="service-card">
+              <div class="service-icon">📸</div>
+              <h3 class="service-title">SA Fashion Week</h3>
+              <p class="service-description">
+                Professional runway and backstage photography for South African Fashion Week. Capturing every moment with precision and artistry.
+              </p>
+            </article>
+            
+            <article class="service-card">
+              <div class="service-icon">🎬</div>
+              <h3 class="service-title">Soweto Fashion Week</h3>
+              <p class="service-description">
+                Dedicated coverage of Soweto Fashion Week, showcasing the vibrant and innovative spirit of African fashion design.
+              </p>
+            </article>
+            
+            <article class="service-card">
+              <div class="service-icon">✨</div>
+              <h3 class="service-title">Exclusive Bookings</h3>
+              <p class="service-description">
+                Custom photography sessions for designers, brands, and fashion houses. Editorial shoots, lookbooks, and campaign photography.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Portfolio -->
+      <section id="portfolio" class="section portfolio-section">
+        <div class="container">
+          <div class="section-intro">
+            <h2 class="section-title">Portfolio</h2>
+            <p class="section-description">Selected work from fashion weeks and exclusive sessions.</p>
+          </div>
+          
+          <div class="filters" role="tablist" aria-label="Filter portfolio by category">
+            <button class="filter-btn active" data-filter="all" role="tab" aria-selected="true">All</button>
+            <button class="filter-btn" data-filter="safw" role="tab" aria-selected="false">SA Fashion Week</button>
+            <button class="filter-btn" data-filter="sfw" role="tab" aria-selected="false">Soweto Fashion Week</button>
+            <button class="filter-btn" data-filter="editorial" role="tab" aria-selected="false">Editorial</button>
+          </div>
+
+          <div class="portfolio-grid" id="portfolio-grid">
+            <!-- Dynamic content from Firebase will load here -->
+            <figure class="portfolio-item" data-category="safw">
+              <img
+                src="https://images.unsplash.com/photo-1518806118471-f28b20a1d79d?q=80&w=1600&auto=format&fit=crop"
+                alt="SA Fashion Week runway photography"
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption>SA Fashion Week 2024</figcaption>
+            </figure>
+            <figure class="portfolio-item" data-category="sfw">
+              <img
+                src="https://images.unsplash.com/photo-1520974735194-2d2d70f41f88?q=80&w=1600&auto=format&fit=crop"
+                alt="Soweto Fashion Week editorial"
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption>Soweto Fashion Week 2024</figcaption>
+            </figure>
+            <figure class="portfolio-item" data-category="editorial">
+              <img
+                src="https://images.unsplash.com/photo-1512758017271-d7b84c2113f1?q=80&w=1600&auto=format&fit=crop"
+                alt="Fashion editorial photography"
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption>Editorial Collection</figcaption>
+            </figure>
+            <figure class="portfolio-item" data-category="safw">
+              <img
+                src="https://images.unsplash.com/photo-1520975594081-44e9b7842cbd?q=80&w=1600&auto=format&fit=crop"
+                alt="SA Fashion Week backstage"
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption>Backstage Moments</figcaption>
+            </figure>
+            <figure class="portfolio-item" data-category="sfw">
+              <img
+                src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1600&auto=format&fit=crop"
+                alt="Soweto Fashion Week design showcase"
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption>Design Showcase</figcaption>
+            </figure>
+            <figure class="portfolio-item" data-category="editorial">
+              <img
+                src="https://images.unsplash.com/photo-1520975922284-978c1a3adf9a?q=80&w=1600&auto=format&fit=crop"
+                alt="Fashion portrait photography"
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption>Portrait Series</figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <!-- About -->
+      <section id="about" class="section about-section">
+        <div class="container about-container">
+          <div class="about-content">
+            <h2 class="section-title">About</h2>
+            <p class="about-text">
+              Professional fashion photographer specializing in capturing the essence of African fashion. With extensive experience covering SA Fashion Week and Soweto Fashion Week, we bring a unique perspective to every shoot.
+            </p>
+            <p class="about-text">
+              Our work combines technical excellence with artistic vision, delivering stunning imagery that tells your story. Available for runway coverage, backstage documentation, editorial shoots, and exclusive brand campaigns.
+            </p>
+            <a href="#contact" class="btn btn-outline">Get in Touch</a>
+          </div>
+          <div class="about-image" role="img" aria-label="Photographer at work"></div>
+        </div>
+      </section>
+
+      <!-- Contact -->
+      <section id="contact" class="section contact-section">
+        <div class="container contact-container">
+          <div class="section-intro">
+            <h2 class="section-title">Book a Session</h2>
+            <p class="section-description">
+              Ready to work together? Share your project details and we'll get back to you within 24 hours.
+            </p>
+          </div>
+          
+          <form class="contact-form" action="https://formspree.io/f/your-id" method="POST">
+            <div class="form-grid">
+              <label>
+                <span>Name</span>
+                <input type="text" name="name" autocomplete="name" required />
+              </label>
+              <label>
+                <span>Email</span>
+                <input type="email" name="email" autocomplete="email" required />
+              </label>
+              <label class="full">
+                <span>Service Type</span>
+                <select name="service" required>
+                  <option value="" disabled selected>Select a service</option>
+                  <option value="safw">SA Fashion Week Coverage</option>
+                  <option value="sfw">Soweto Fashion Week Coverage</option>
+                  <option value="editorial">Editorial Shoot</option>
+                  <option value="campaign">Campaign Photography</option>
+                  <option value="lookbook">Lookbook</option>
+                  <option value="other">Other</option>
+                </select>
+              </label>
+              <label class="full">
+                <span>Project Details</span>
+                <textarea
+                  name="message"
+                  rows="6"
+                  required
+                  placeholder="Tell us about your project, dates, location, and any specific requirements..."
+                ></textarea>
+              </label>
+            </div>
+            <button class="btn btn-primary" type="submit">Send Inquiry</button>
+            <p class="form-footnote">
+              By submitting, you agree to be contacted regarding your inquiry.
+            </p>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p>© <span id="year"></span> Professional Photography. All rights reserved.</p>
+        <ul class="social">
+          <li>
+            <a href="#" aria-label="Instagram" title="Instagram">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="1.5" />
+                <circle cx="12" cy="12" r="4.25" stroke="currentColor" stroke-width="1.5" />
+                <circle cx="17.5" cy="6.5" r="1.25" fill="currentColor" />
+              </svg>
+            </a>
+          </li>
+          <li>
+            <a href="#" aria-label="Email" title="Email">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5" />
+                <path d="M4 7l8 6 8-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </footer>
+
+    <div class="lightbox" id="lightbox" aria-modal="true" aria-hidden="true" role="dialog">
+      <button class="lightbox-close" aria-label="Close">×</button>
+      <img class="lightbox-image" alt="Expanded work image" />
+      <p class="lightbox-caption"></p>
+    </div>
+
+    <!-- Firebase for dynamic gallery -->
+    <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script defer src="assets/js/config.js"></script>
+    <script defer src="assets/js/script.js"></script>
+    <script defer src="assets/js/gallery.js"></script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+# Cursor worktree coordination files
+.coord-*.lock
+.agent-id
+
+# Common ignores
+node_modules/
+.DS_Store
+*.log
+.env
+.env.local
+
