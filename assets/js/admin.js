@@ -45,6 +45,7 @@
   const deleteSelectedBtn = document.getElementById("delete-selected");
   const defaultCaptionInput = document.getElementById("default-caption");
   const defaultCategorySelect = document.getElementById("default-category");
+  const defaultSectionSelect = document.getElementById("default-section");
   const uploadProgress = document.getElementById("upload-progress");
   const uploadBar = document.getElementById("upload-bar");
   const userUidInput = document.getElementById("user-uid");
@@ -197,7 +198,9 @@
               const orderVal = await nextOrderValue();
               const captionDefault = (defaultCaptionInput?.value || "").trim();
               const categoryDefault =
-                defaultCategorySelect?.value || "campaign";
+                defaultCategorySelect?.value || "fashion-events";
+              const sectionDefault =
+                defaultSectionSelect?.value || "fashion";
               
               // Extract EXIF data if EXIF library is available
               let exifData = {};
@@ -246,6 +249,7 @@
                 path,
                 caption: captionDefault || file.name,
                 category: categoryDefault,
+                section: sectionDefault,
                 order: orderVal,
                 metadata: {
                   title: captionDefault || file.name,
@@ -324,6 +328,7 @@
       item.setAttribute("data-description", String(data.metadata?.description || ""));
       item.setAttribute("data-keywords", Array.isArray(data.metadata?.keywords) ? data.metadata.keywords.join(" ") : "");
       item.setAttribute("data-category", String(data.category || ""));
+      item.setAttribute("data-section", String(data.section || ""));
 
       const editBtn = document.createElement("span");
       editBtn.className = "edit-btn";
@@ -525,7 +530,7 @@
     }
   });
 
-  // Metadata editor modal
+  // Simple one-click portfolio item editor
   function openMetadataEditor(imageId, imageData) {
     const modal = document.createElement("div");
     modal.className = "metadata-modal";
@@ -546,75 +551,143 @@
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 24px;
-      max-width: 600px;
+      max-width: 500px;
       width: 100%;
-      max-height: 90vh;
-      overflow-y: auto;
     `;
 
     const title = document.createElement("h3");
-    title.textContent = "Edit Image Metadata";
+    title.textContent = "Edit Portfolio Item";
     title.style.marginBottom = "20px";
 
     const form = document.createElement("form");
     form.className = "form-grid";
 
-    const titleInput = createFormField("Title", "title", imageData.metadata?.title || imageData.caption || "");
-    const descInput = createFormField("Description", "description", imageData.metadata?.description || "", "textarea");
-    const altInput = createFormField("Alt Text", "altText", imageData.metadata?.altText || imageData.caption || "");
-    const keywordsInput = createFormField("Keywords (comma-separated)", "keywords", Array.isArray(imageData.metadata?.keywords) ? imageData.metadata.keywords.join(", ") : "");
-
-    const exifSection = document.createElement("div");
-    exifSection.style.marginTop = "20px";
-    exifSection.style.paddingTop = "20px";
-    exifSection.style.borderTop = "1px solid var(--border)";
-    
-    const exifTitle = document.createElement("h4");
-    exifTitle.textContent = "EXIF Data";
-    exifTitle.style.marginBottom = "12px";
-    exifTitle.style.fontSize = "18px";
-
-    const exifDisplay = document.createElement("div");
-    exifDisplay.className = "exif-display";
-    exifDisplay.style.cssText = `
-      background: #0a0a0b;
-      padding: 12px;
+    // Title field
+    const titleLabel = document.createElement("label");
+    titleLabel.className = "full";
+    titleLabel.style.cssText = "display: flex; flex-direction: column; gap: 8px;";
+    const titleSpan = document.createElement("span");
+    titleSpan.textContent = "Title";
+    titleSpan.style.fontSize = "15px";
+    titleSpan.style.fontWeight = "500";
+    const titleInput = document.createElement("input");
+    titleInput.type = "text";
+    titleInput.name = "title";
+    titleInput.value = imageData.metadata?.title || imageData.caption || "";
+    titleInput.placeholder = "Enter image title";
+    titleInput.style.cssText = `
+      width: 100%;
+      padding: 12px 16px;
       border-radius: 8px;
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.8;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
     `;
+    titleLabel.appendChild(titleSpan);
+    titleLabel.appendChild(titleInput);
 
-    const exifData = imageData.metadata?.exif || {};
-    
-    // Create EXIF display safely (avoid XSS)
-    const exifFields = [
-      { label: "Camera", value: `${exifData.make || ""} ${exifData.model || ""}`.trim() || "N/A" },
-      { label: "Date", value: exifData.dateTime || "N/A" },
-      { label: "ISO", value: exifData.iso || "N/A" },
-      { label: "Aperture", value: exifData.aperture || "N/A" },
-      { label: "Shutter Speed", value: exifData.shutterSpeed || "N/A" },
-      { label: "Focal Length", value: exifData.focalLength || "N/A" },
+    // Category field
+    const categoryLabel = document.createElement("label");
+    categoryLabel.className = "full";
+    categoryLabel.style.cssText = "display: flex; flex-direction: column; gap: 8px;";
+    const categorySpan = document.createElement("span");
+    categorySpan.textContent = "Category";
+    categorySpan.style.fontSize = "15px";
+    categorySpan.style.fontWeight = "500";
+    const categorySelect = document.createElement("select");
+    categorySelect.name = "category";
+    categorySelect.style.cssText = `
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
+    `;
+    const categories = [
+      { value: "fashion-events", label: "Fashion Events" },
+      { value: "fashion-photography", label: "Fashion Photography" },
+      { value: "portraits-headshots", label: "Portraits & Headshots" },
+      { value: "model-portfolios", label: "Model Portfolios" },
+      { value: "actor-portfolios", label: "Actor Portfolios" },
+      { value: "lifestyle", label: "Lifestyle" },
+      { value: "events", label: "Events" }
     ];
-    
-    if (exifData.gps?.latitude && exifData.gps?.longitude) {
-      exifFields.push({
-        label: "Location",
-        value: `${exifData.gps.latitude}, ${exifData.gps.longitude}`
-      });
-    }
-    
-    exifFields.forEach((field) => {
-      const div = document.createElement("div");
-      const strong = document.createElement("strong");
-      strong.textContent = `${field.label}: `;
-      div.appendChild(strong);
-      div.appendChild(document.createTextNode(field.value));
-      exifDisplay.appendChild(div);
+    categories.forEach(cat => {
+      const option = document.createElement("option");
+      option.value = cat.value;
+      option.textContent = cat.label;
+      if (imageData.category === cat.value) option.selected = true;
+      categorySelect.appendChild(option);
     });
+    categoryLabel.appendChild(categorySpan);
+    categoryLabel.appendChild(categorySelect);
 
-    exifSection.appendChild(exifTitle);
-    exifSection.appendChild(exifDisplay);
+    // Section field
+    const sectionLabel = document.createElement("label");
+    sectionLabel.className = "full";
+    sectionLabel.style.cssText = "display: flex; flex-direction: column; gap: 8px;";
+    const sectionSpan = document.createElement("span");
+    sectionSpan.textContent = "Portfolio Section";
+    sectionSpan.style.fontSize = "15px";
+    sectionSpan.style.fontWeight = "500";
+    const sectionSelect = document.createElement("select");
+    sectionSelect.name = "section";
+    sectionSelect.style.cssText = `
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
+    `;
+    const sections = [
+      { value: "fashion", label: "Fashion" },
+      { value: "photo-shoots", label: "Photo Shoots" },
+      { value: "agency-portfolio", label: "Agency Portfolio Shoots" }
+    ];
+    sections.forEach(sec => {
+      const option = document.createElement("option");
+      option.value = sec.value;
+      option.textContent = sec.label;
+      if (imageData.section === sec.value) option.selected = true;
+      sectionSelect.appendChild(option);
+    });
+    sectionLabel.appendChild(sectionSpan);
+    sectionLabel.appendChild(sectionSelect);
+
+    // Caption field
+    const captionLabel = document.createElement("label");
+    captionLabel.className = "full";
+    captionLabel.style.cssText = "display: flex; flex-direction: column; gap: 8px;";
+    const captionSpan = document.createElement("span");
+    captionSpan.textContent = "Caption";
+    captionSpan.style.fontSize = "15px";
+    captionSpan.style.fontWeight = "500";
+    const captionInput = document.createElement("textarea");
+    captionInput.name = "caption";
+    captionInput.value = imageData.caption || "";
+    captionInput.placeholder = "Enter caption";
+    captionInput.rows = 3;
+    captionInput.style.cssText = `
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
+      resize: vertical;
+    `;
+    captionLabel.appendChild(captionSpan);
+    captionLabel.appendChild(captionInput);
 
     const btnGroup = document.createElement("div");
     btnGroup.style.cssText = "display: flex; gap: 12px; margin-top: 20px;";
@@ -633,35 +706,44 @@
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const formData = new FormData(form);
-      const keywordsStr = formData.get("keywords") || "";
-      const keywords = keywordsStr.split(",").map(k => k.trim()).filter(k => k);
-      
-      const metadata = {
-        title: formData.get("title") || "",
-        description: formData.get("description") || "",
-        altText: formData.get("altText") || "",
-        keywords: keywords,
-        exif: exifData,
-      };
+      const title = formData.get("title") || "";
+      const category = formData.get("category") || "";
+      const section = formData.get("section") || "";
+      const caption = formData.get("caption") || "";
 
-      const success = await window.metadataManager?.updateImageMetadata(imageId, metadata);
-      if (success) {
-        alert("Metadata saved successfully!");
+      try {
+        const docRef = db.collection("gallery").doc(imageId);
+        const updates = {
+          category: category,
+          section: section,
+          caption: caption,
+        };
+        
+        // Update metadata if it exists, otherwise create it
+        const existingData = (await docRef.get()).data();
+        const existingMetadata = existingData?.metadata || {};
+        updates.metadata = {
+          ...existingMetadata,
+          title: title,
+          altText: title || caption,
+        };
+
+        await docRef.update(updates);
+        alert("Portfolio item updated successfully!");
         modal.remove();
         await loadGallery();
-      } else {
-        alert("Failed to save metadata.");
+      } catch (error) {
+        alert("Failed to update portfolio item: " + error.message);
       }
     });
 
     btnGroup.appendChild(saveBtn);
     btnGroup.appendChild(cancelBtn);
 
-    form.appendChild(titleInput);
-    form.appendChild(descInput);
-    form.appendChild(altInput);
-    form.appendChild(keywordsInput);
-    form.appendChild(exifSection);
+    form.appendChild(titleLabel);
+    form.appendChild(categoryLabel);
+    form.appendChild(sectionLabel);
+    form.appendChild(captionLabel);
     form.appendChild(btnGroup);
 
     modalContent.appendChild(title);
@@ -778,10 +860,13 @@
     `;
     catSelect.innerHTML = `
       <option value="">No change</option>
-      <option value="safw">SA Fashion Week</option>
-      <option value="sfw">Soweto Fashion Week</option>
-      <option value="editorial">Editorial</option>
-      <option value="campaign">Campaign</option>
+      <option value="fashion-events">Fashion Events</option>
+      <option value="fashion-photography">Fashion Photography</option>
+      <option value="portraits-headshots">Portraits & Headshots</option>
+      <option value="model-portfolios">Model Portfolios</option>
+      <option value="actor-portfolios">Actor Portfolios</option>
+      <option value="lifestyle">Lifestyle</option>
+      <option value="events">Events</option>
     `;
     categorySelect.appendChild(catSpan);
     categorySelect.appendChild(catSelect);
