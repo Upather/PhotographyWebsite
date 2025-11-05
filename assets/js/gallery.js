@@ -2,6 +2,10 @@
 (function () {
   const grid = document.getElementById("portfolio-grid");
   const filterButtons = Array.from(document.querySelectorAll(".filter-btn"));
+  const sectionButtons = Array.from(document.querySelectorAll(".portfolio-section-btn"));
+  
+  let currentSection = "all";
+  let currentCategory = "all";
 
   function render(items) {
     if (!grid) return;
@@ -9,7 +13,10 @@
     items.forEach((it) => {
       const figure = document.createElement("figure");
       figure.className = "portfolio-item";
-      figure.setAttribute("data-category", String(it.category || "campaign"));
+      const category = String(it.category || "lifestyle");
+      const section = String(it.portfolioSection || "fashion");
+      figure.setAttribute("data-category", category);
+      figure.setAttribute("data-section", section);
 
       const img = document.createElement("img");
       img.setAttribute("src", String(it.url || ""));
@@ -29,14 +36,19 @@
       figure.appendChild(caption);
       grid.appendChild(figure);
     });
+    applyFilters();
   }
 
-  function applyFilter(category) {
+  function applyFilters() {
     const items = Array.from(document.querySelectorAll(".portfolio-item"));
     items.forEach((item) => {
-      const match =
-        category === "all" || item.getAttribute("data-category") === category;
-      item.style.display = match ? "" : "none";
+      const itemCategory = item.getAttribute("data-category");
+      const itemSection = item.getAttribute("data-section");
+      
+      const sectionMatch = currentSection === "all" || itemSection === currentSection;
+      const categoryMatch = currentCategory === "all" || itemCategory === currentCategory;
+      
+      item.style.display = (sectionMatch && categoryMatch) ? "" : "none";
     });
   }
 
@@ -47,7 +59,17 @@
       filterButtons.forEach((b) =>
         b.setAttribute("aria-selected", String(b === btn))
       );
-      applyFilter(btn.getAttribute("data-filter"));
+      currentCategory = btn.getAttribute("data-filter") || "all";
+      applyFilters();
+    });
+  });
+
+  sectionButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      sectionButtons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentSection = btn.getAttribute("data-section") || "all";
+      applyFilters();
     });
   });
 

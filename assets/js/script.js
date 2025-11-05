@@ -27,16 +27,25 @@ document.addEventListener("click", (e) => {
   }
 });
 
-// Portfolio filters
+// Portfolio filters (handles initial static items, gallery.js handles dynamic items)
 const filterButtons = Array.from(document.querySelectorAll(".filter-btn"));
-const portfolioItems = Array.from(document.querySelectorAll(".portfolio-item"));
-function applyFilter(category) {
+const sectionButtons = Array.from(document.querySelectorAll(".portfolio-section-btn"));
+let currentSection = "all";
+let currentCategory = "all";
+
+function applyPortfolioFilters() {
+  const portfolioItems = Array.from(document.querySelectorAll(".portfolio-item"));
   portfolioItems.forEach((item) => {
-    const match =
-      category === "all" || item.getAttribute("data-category") === category;
-    item.style.display = match ? "" : "none";
+    const itemCategory = item.getAttribute("data-category");
+    const itemSection = item.getAttribute("data-section") || "fashion";
+    
+    const sectionMatch = currentSection === "all" || itemSection === currentSection;
+    const categoryMatch = currentCategory === "all" || itemCategory === currentCategory;
+    
+    item.style.display = (sectionMatch && categoryMatch) ? "" : "none";
   });
 }
+
 filterButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
     filterButtons.forEach((b) => b.classList.remove("active"));
@@ -44,7 +53,17 @@ filterButtons.forEach((btn) => {
     filterButtons.forEach((b) =>
       b.setAttribute("aria-selected", String(b === btn))
     );
-    applyFilter(btn.getAttribute("data-filter"));
+    currentCategory = btn.getAttribute("data-filter") || "all";
+    applyPortfolioFilters();
+  });
+});
+
+sectionButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    sectionButtons.forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentSection = btn.getAttribute("data-section") || "all";
+    applyPortfolioFilters();
   });
 });
 

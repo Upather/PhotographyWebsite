@@ -323,6 +323,37 @@ h3 {
 }
 
 /* Portfolio */
+.portfolio-sections {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  margin-bottom: var(--spacing-md);
+}
+
+.portfolio-section-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.portfolio-section-btn:hover {
+  background: var(--bg-secondary);
+  border-color: var(--text);
+}
+
+.portfolio-section-btn.active {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+}
+
 .filters {
   display: flex;
   justify-content: center;
