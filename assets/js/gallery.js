@@ -9,7 +9,7 @@
     items.forEach((it) => {
       const figure = document.createElement("figure");
       figure.className = "portfolio-item";
-      figure.setAttribute("data-category", String(it.category || "campaign"));
+      figure.setAttribute("data-category", String(it.category || "fashion-events"));
 
       const img = document.createElement("img");
       img.setAttribute("src", String(it.url || ""));

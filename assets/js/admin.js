@@ -129,6 +129,54 @@
     }
   });
 
+  // Image resizing and optimization
+  function resizeImage(file, maxWidth = 1920, maxHeight = 1920, quality = 0.85) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Calculate new dimensions
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Convert to blob with compression
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                const resizedFile = new File([blob], file.name, {
+                  type: 'image/jpeg',
+                  lastModified: Date.now()
+                });
+                resolve(resizedFile);
+              } else {
+                resolve(file); // Fallback to original if conversion fails
+              }
+            },
+            'image/jpeg',
+            quality
+          );
+        };
+        img.onerror = () => resolve(file); // Fallback to original on error
+        img.src = e.target.result;
+      };
+      reader.onerror = () => resolve(file); // Fallback to original on error
+      reader.readAsDataURL(file);
+    });
+  }
+
   // Upload handling
   function setStatus(text) {
     uploadStatus.textContent = text;
@@ -167,7 +215,7 @@
   });
 
   async function uploadFiles(files) {
-    setStatus(`Uploading ${files.length} file(s)...`);
+    setStatus(`Processing and uploading ${files.length} file(s)...`);
     const now = Date.now();
     let completed = 0;
     if (uploadProgress && uploadBar) {
@@ -176,10 +224,15 @@
     }
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const path = `gallery/${now}-${i}-${file.name}`;
+      setStatus(`Processing image ${i + 1}/${files.length}...`);
+      
+      // Resize and optimize image before upload
+      const optimizedFile = await resizeImage(file, 1920, 1920, 0.85);
+      
+      const path = `gallery/${now}-${i}-${optimizedFile.name}`;
       const ref = storage.ref().child(path);
       await new Promise((resolve, reject) => {
-        const task = ref.put(file);
+        const task = ref.put(optimizedFile);
         task.on(
           "state_changed",
           (snap) => {
@@ -197,7 +250,9 @@
               const orderVal = await nextOrderValue();
               const captionDefault = (defaultCaptionInput?.value || "").trim();
               const categoryDefault =
-                defaultCategorySelect?.value || "campaign";
+                defaultCategorySelect?.value || "fashion-events";
+              const sectionDefault =
+                document.getElementById("default-section")?.value || "fashion";
               
               // Extract EXIF data if EXIF library is available
               let exifData = {};
@@ -244,13 +299,14 @@
               await db.collection("gallery").add({
                 url,
                 path,
-                caption: captionDefault || file.name,
+                caption: captionDefault || optimizedFile.name,
                 category: categoryDefault,
+                section: sectionDefault,
                 order: orderVal,
                 metadata: {
-                  title: captionDefault || file.name,
+                  title: captionDefault || optimizedFile.name,
                   description: "",
-                  altText: captionDefault || file.name,
+                  altText: captionDefault || optimizedFile.name,
                   keywords: [],
                   exif: exifData,
                 },
@@ -525,7 +581,7 @@
     }
   });
 
-  // Metadata editor modal
+  // Simple portfolio item editor (one-click editing: title, category, caption, section)
   function openMetadataEditor(imageId, imageData) {
     const modal = document.createElement("div");
     modal.className = "metadata-modal";
@@ -546,75 +602,98 @@
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 24px;
-      max-width: 600px;
+      max-width: 500px;
       width: 100%;
-      max-height: 90vh;
-      overflow-y: auto;
     `;
 
     const title = document.createElement("h3");
-    title.textContent = "Edit Image Metadata";
+    title.textContent = "Edit Portfolio Item";
     title.style.marginBottom = "20px";
 
     const form = document.createElement("form");
     form.className = "form-grid";
 
+    // Title field
     const titleInput = createFormField("Title", "title", imageData.metadata?.title || imageData.caption || "");
-    const descInput = createFormField("Description", "description", imageData.metadata?.description || "", "textarea");
-    const altInput = createFormField("Alt Text", "altText", imageData.metadata?.altText || imageData.caption || "");
-    const keywordsInput = createFormField("Keywords (comma-separated)", "keywords", Array.isArray(imageData.metadata?.keywords) ? imageData.metadata.keywords.join(", ") : "");
-
-    const exifSection = document.createElement("div");
-    exifSection.style.marginTop = "20px";
-    exifSection.style.paddingTop = "20px";
-    exifSection.style.borderTop = "1px solid var(--border)";
     
-    const exifTitle = document.createElement("h4");
-    exifTitle.textContent = "EXIF Data";
-    exifTitle.style.marginBottom = "12px";
-    exifTitle.style.fontSize = "18px";
-
-    const exifDisplay = document.createElement("div");
-    exifDisplay.className = "exif-display";
-    exifDisplay.style.cssText = `
-      background: #0a0a0b;
-      padding: 12px;
+    // Caption field
+    const captionInput = createFormField("Caption", "caption", imageData.caption || "");
+    
+    // Category dropdown
+    const categoryContainer = document.createElement("label");
+    categoryContainer.className = "full";
+    categoryContainer.style.cssText = "display: flex; flex-direction: column; gap: 8px;";
+    const categoryLabel = document.createElement("span");
+    categoryLabel.textContent = "Category";
+    categoryLabel.style.fontSize = "15px";
+    categoryLabel.style.fontWeight = "500";
+    const categorySelect = document.createElement("select");
+    categorySelect.name = "category";
+    categorySelect.style.cssText = `
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
       border-radius: 8px;
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.8;
+      color: var(--text);
+      font-size: 14px;
     `;
-
-    const exifData = imageData.metadata?.exif || {};
-    
-    // Create EXIF display safely (avoid XSS)
-    const exifFields = [
-      { label: "Camera", value: `${exifData.make || ""} ${exifData.model || ""}`.trim() || "N/A" },
-      { label: "Date", value: exifData.dateTime || "N/A" },
-      { label: "ISO", value: exifData.iso || "N/A" },
-      { label: "Aperture", value: exifData.aperture || "N/A" },
-      { label: "Shutter Speed", value: exifData.shutterSpeed || "N/A" },
-      { label: "Focal Length", value: exifData.focalLength || "N/A" },
+    const categories = [
+      { value: "fashion-events", label: "Fashion Events" },
+      { value: "fashion-photography", label: "Fashion Photography" },
+      { value: "portraits-headshots", label: "Portraits & Headshots" },
+      { value: "model-portfolios", label: "Model Portfolios" },
+      { value: "actor-portfolios", label: "Actor Portfolios" },
+      { value: "lifestyle", label: "Lifestyle" },
+      { value: "events", label: "Events" }
     ];
-    
-    if (exifData.gps?.latitude && exifData.gps?.longitude) {
-      exifFields.push({
-        label: "Location",
-        value: `${exifData.gps.latitude}, ${exifData.gps.longitude}`
-      });
-    }
-    
-    exifFields.forEach((field) => {
-      const div = document.createElement("div");
-      const strong = document.createElement("strong");
-      strong.textContent = `${field.label}: `;
-      div.appendChild(strong);
-      div.appendChild(document.createTextNode(field.value));
-      exifDisplay.appendChild(div);
+    categories.forEach(cat => {
+      const option = document.createElement("option");
+      option.value = cat.value;
+      option.textContent = cat.label;
+      if (cat.value === (imageData.category || "fashion-events")) {
+        option.selected = true;
+      }
+      categorySelect.appendChild(option);
     });
-
-    exifSection.appendChild(exifTitle);
-    exifSection.appendChild(exifDisplay);
+    categoryContainer.appendChild(categoryLabel);
+    categoryContainer.appendChild(categorySelect);
+    
+    // Section dropdown
+    const sectionContainer = document.createElement("label");
+    sectionContainer.className = "full";
+    sectionContainer.style.cssText = "display: flex; flex-direction: column; gap: 8px;";
+    const sectionLabel = document.createElement("span");
+    sectionLabel.textContent = "Portfolio Section";
+    sectionLabel.style.fontSize = "15px";
+    sectionLabel.style.fontWeight = "500";
+    const sectionSelect = document.createElement("select");
+    sectionSelect.name = "section";
+    sectionSelect.style.cssText = `
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+    `;
+    const sections = [
+      { value: "fashion", label: "Fashion" },
+      { value: "photo-shoots", label: "Photo Shoots" },
+      { value: "agency-portfolio-shoots", label: "Agency Portfolio Shoots" }
+    ];
+    sections.forEach(sec => {
+      const option = document.createElement("option");
+      option.value = sec.value;
+      option.textContent = sec.label;
+      if (sec.value === (imageData.section || "fashion")) {
+        option.selected = true;
+      }
+      sectionSelect.appendChild(option);
+    });
+    sectionContainer.appendChild(sectionLabel);
+    sectionContainer.appendChild(sectionSelect);
 
     const btnGroup = document.createElement("div");
     btnGroup.style.cssText = "display: flex; gap: 12px; margin-top: 20px;";
@@ -622,7 +701,7 @@
     const saveBtn = document.createElement("button");
     saveBtn.type = "submit";
     saveBtn.className = "btn btn-primary";
-    saveBtn.textContent = "Save";
+    saveBtn.textContent = "Save Changes";
 
     const cancelBtn = document.createElement("button");
     cancelBtn.type = "button";
@@ -633,24 +712,31 @@
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const formData = new FormData(form);
-      const keywordsStr = formData.get("keywords") || "";
-      const keywords = keywordsStr.split(",").map(k => k.trim()).filter(k => k);
       
+      const updateData = {
+        caption: formData.get("caption") || "",
+        category: formData.get("category") || "fashion-events",
+        section: formData.get("section") || "fashion",
+      };
+      
+      // Update metadata title
       const metadata = {
-        title: formData.get("title") || "",
-        description: formData.get("description") || "",
-        altText: formData.get("altText") || "",
-        keywords: keywords,
-        exif: exifData,
+        ...imageData.metadata,
+        title: formData.get("title") || updateData.caption,
+        altText: formData.get("title") || updateData.caption,
       };
 
-      const success = await window.metadataManager?.updateImageMetadata(imageId, metadata);
-      if (success) {
-        alert("Metadata saved successfully!");
+      try {
+        const docRef = db.collection("gallery").doc(imageId);
+        await docRef.update({
+          ...updateData,
+          metadata: metadata
+        });
+        alert("Portfolio item updated successfully!");
         modal.remove();
         await loadGallery();
-      } else {
-        alert("Failed to save metadata.");
+      } catch (err) {
+        alert("Failed to save changes: " + (err.message || "Unknown error"));
       }
     });
 
@@ -658,10 +744,9 @@
     btnGroup.appendChild(cancelBtn);
 
     form.appendChild(titleInput);
-    form.appendChild(descInput);
-    form.appendChild(altInput);
-    form.appendChild(keywordsInput);
-    form.appendChild(exifSection);
+    form.appendChild(captionInput);
+    form.appendChild(categoryContainer);
+    form.appendChild(sectionContainer);
     form.appendChild(btnGroup);
 
     modalContent.appendChild(title);
