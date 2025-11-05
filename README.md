@@ -64,14 +64,62 @@ service firebase.storage {
 
 Public site will auto-load images from Firestore if `assets/js/config.js` is present; otherwise it shows the built-in placeholders.
 
+## Progressive Web App (PWA) Features
+
+This portfolio includes full PWA support for offline functionality and mobile app-like experience:
+
+### Features
+- **Offline Support**: Service worker caches essential assets and images for offline viewing
+- **Installable**: Users can install the site as a native app on mobile devices
+- **Performance Monitoring**: Tracks Core Web Vitals (LCP, FID, CLS) and page load metrics
+- **Enhanced Image Loading**: Advanced lazy loading with IntersectionObserver and progressive image loading
+- **Responsive Images**: Automatic srcset generation for better performance on different devices
+
+### PWA Icons
+To complete the PWA setup, add the following icon sizes to `assets/images/`:
+- `icon-72x72.png`
+- `icon-96x96.png`
+- `icon-128x128.png`
+- `icon-144x144.png`
+- `icon-152x152.png`
+- `icon-192x192.png`
+- `icon-384x384.png`
+- `icon-512x512.png`
+
+You can generate these from a single high-resolution image using online tools or image editing software.
+
+### Testing PWA Features
+1. Open the site in Chrome/Edge
+2. Open DevTools → Application → Service Workers to verify registration
+3. Test offline mode: DevTools → Network → Offline
+4. Check install prompt: Look for install banner or browser install button
+
+## Performance Optimizations
+
+The site includes several performance optimizations:
+
+- **Lazy Loading**: Images load only when entering viewport
+- **Image Optimization**: Placeholder images reduce layout shift
+- **Caching Strategy**: Service worker implements cache-first for images, network-first for HTML
+- **Resource Hints**: DNS prefetch and preconnect for external resources
+- **Content Visibility**: CSS content-visibility for off-screen content
+- **Reduced Motion**: Respects user's prefers-reduced-motion preference
+
 ## Structure
 
 ```
 PhotographyProject/
   index.html
+  manifest.json          # PWA manifest
+  sw.js                  # Service worker
   assets/
     css/styles.css
-    js/script.js
+    js/
+      script.js          # Main site functionality
+      gallery.js         # Gallery with enhanced lazy loading
+      performance.js     # Performance monitoring
+      pwa.js            # PWA registration and features
+      seo.js            # SEO enhancements
     images/ (add your images here)
 ```
 
