@@ -14,7 +14,7 @@
     />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https://images.unsplash.com data: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firestore.googleapis.com https://firebasestorage.googleapis.com https://*.googleapis.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://formspree.io; upgrade-insecure-requests"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https://images.unsplash.com data: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firestore.googleapis.com https://firebasestorage.googleapis.com https://*.googleapis.com https://www.instagram.com https://www.facebook.com https://twitter.com https://pinterest.com; frame-src 'self' https://www.facebook.com https://twitter.com https://pinterest.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://formspree.io; upgrade-insecure-requests"
     />
     <title>Professional Fashion Photography — SA Fashion Week & Soweto Fashion Week</title>
     <meta
@@ -28,6 +28,19 @@
       content="Professional fashion photography services for SA Fashion Week, Soweto Fashion Week, and exclusive bookings."
     />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://yourdomain.com" />
+    <meta property="og:image" content="https://yourdomain.com/assets/images/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:site_name" content="Professional Photography" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Professional Fashion Photography — SA Fashion Week & Soweto Fashion Week" />
+    <meta name="twitter:description" content="Professional fashion photography services for SA Fashion Week, Soweto Fashion Week, and exclusive bookings." />
+    <meta name="twitter:image" content="https://yourdomain.com/assets/images/twitter-card.jpg" />
+    <meta name="twitter:image:alt" content="Professional Fashion Photography Portfolio" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -204,29 +217,72 @@
         </div>
       </section>
 
+      <!-- Instagram Feed -->
+      <section id="instagram" class="section instagram-feed-section">
+        <div class="container">
+          <div class="section-intro">
+            <h2 class="section-title">Instagram</h2>
+            <p class="section-description">Follow us on Instagram for the latest behind-the-scenes moments and fashion photography.</p>
+          </div>
+          <div id="instagram-feed">
+            <!-- Instagram feed will be loaded here dynamically -->
+          </div>
+        </div>
+      </section>
+
       <!-- Contact -->
       <section id="contact" class="section contact-section">
         <div class="container contact-container">
           <div class="section-intro">
             <h2 class="section-title">Book a Session</h2>
             <p class="section-description">
-              Ready to work together? Share your project details and we'll get back to you within 24 hours.
+              Ready to work together? Get in touch via your preferred method. We'll get back to you within 24 hours.
             </p>
+          </div>
+
+          <!-- Multi-channel Contact Options -->
+          <div class="contact-channels">
+            <div class="contact-channel-card">
+              <div class="contact-channel-icon">📧</div>
+              <h3 class="contact-channel-title">Email</h3>
+              <p class="contact-channel-description">Send us a detailed message</p>
+              <a href="mailto:hello@example.com" class="contact-channel-link">hello@example.com</a>
+            </div>
+            <div class="contact-channel-card">
+              <div class="contact-channel-icon">📱</div>
+              <h3 class="contact-channel-title">WhatsApp</h3>
+              <p class="contact-channel-description">Chat with us directly</p>
+              <a href="https://wa.me/27123456789" class="contact-channel-link" target="_blank" rel="noopener noreferrer">+27 12 345 6789</a>
+            </div>
+            <div class="contact-channel-card">
+              <div class="contact-channel-icon">📞</div>
+              <h3 class="contact-channel-title">Phone</h3>
+              <p class="contact-channel-description">Call us during business hours</p>
+              <a href="tel:+27123456789" class="contact-channel-link">+27 12 345 6789</a>
+            </div>
+          </div>
+
+          <div class="contact-divider">
+            <span>or</span>
           </div>
           
           <form class="contact-form" action="https://formspree.io/f/your-id" method="POST">
             <div class="form-grid">
               <label>
                 <span>Name</span>
-                <input type="text" name="name" autocomplete="name" required />
+                <input type="text" name="name" autocomplete="name" required aria-required="true" />
               </label>
               <label>
                 <span>Email</span>
-                <input type="email" name="email" autocomplete="email" required />
+                <input type="email" name="email" autocomplete="email" required aria-required="true" />
+              </label>
+              <label>
+                <span>Phone <span class="optional">(Optional)</span></span>
+                <input type="tel" name="phone" autocomplete="tel" placeholder="+27 12 345 6789" />
               </label>
               <label class="full">
                 <span>Service Type</span>
-                <select name="service" required>
+                <select name="service" required aria-required="true">
                   <option value="" disabled selected>Select a service</option>
                   <option value="safw">SA Fashion Week Coverage</option>
                   <option value="sfw">Soweto Fashion Week Coverage</option>
@@ -242,6 +298,7 @@
                   name="message"
                   rows="6"
                   required
+                  aria-required="true"
                   placeholder="Tell us about your project, dates, location, and any specific requirements..."
                 ></textarea>
               </label>
@@ -290,7 +347,10 @@
     <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
     <script defer src="assets/js/config.js"></script>
+    <script defer src="assets/js/seo.js"></script>
     <script defer src="assets/js/script.js"></script>
     <script defer src="assets/js/gallery.js"></script>
+    <script defer src="assets/js/social-sharing.js"></script>
+    <script defer src="assets/js/contact-form.js"></script>
   </body>
 </html>

@@ -330,6 +330,36 @@
               <p class="muted">Drag tiles using the handle to reorder.</p>
             </section>
             <section class="admin-card admin-col-12">
+              <h3>Image Metadata & SEO Management</h3>
+              <div class="form-grid" style="margin-top: 12px; margin-bottom: 12px">
+                <label>
+                  <span>Search Images</span>
+                  <input
+                    type="text"
+                    id="metadata-search"
+                    placeholder="Search by title, description, keywords..."
+                  />
+                </label>
+                <label>
+                  <span>Filter by Category</span>
+                  <select id="metadata-filter-category">
+                    <option value="all">All Categories</option>
+                    <option value="safw">SA Fashion Week</option>
+                    <option value="sfw">Soweto Fashion Week</option>
+                    <option value="editorial">Editorial</option>
+                    <option value="campaign">Campaign</option>
+                  </select>
+                </label>
+              </div>
+              <button
+                id="bulk-edit-btn"
+                class="btn btn-small"
+                style="margin-bottom: 12px"
+              >
+                Bulk Edit Selected
+              </button>
+            </section>
+            <section class="admin-card admin-col-12">
               <h3>Current Gallery</h3>
               <div id="gallery-admin" class="gallery-admin"></div>
             </section>
@@ -391,8 +421,11 @@
       defer
       src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"
     ></script>
+    <!-- EXIF.js for metadata extraction -->
+    <script src="https://cdn.jsdelivr.net/npm/exif-js@2.3.0/exif.js"></script>
     <!-- Your config (copy config.example.js to config.js and fill values) -->
     <script defer src="assets/js/config.js"></script>
+    <script defer src="assets/js/metadata.js"></script>
     <script defer src="assets/js/admin.js"></script>
     <footer class="site-footer">
       <div class="container footer-inner">

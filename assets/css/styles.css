@@ -489,6 +489,169 @@ h3 {
   text-align: center;
 }
 
+/* Form Validation States */
+.contact-form input.error,
+.contact-form select.error,
+.contact-form textarea.error {
+  border-color: #ff3b30;
+  background-color: #fff5f5;
+}
+
+.contact-form input.error:focus,
+.contact-form select.error:focus,
+.contact-form textarea.error:focus {
+  border-color: #ff3b30;
+  box-shadow: 0 0 0 3px rgba(255, 59, 48, 0.1);
+}
+
+.field-error {
+  display: block;
+  font-size: 13px;
+  color: #ff3b30;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.optional {
+  font-weight: 400;
+  color: var(--text-secondary);
+  font-size: 0.9em;
+}
+
+/* Form Messages */
+.form-message {
+  padding: var(--spacing-md);
+  border-radius: 12px;
+  margin-bottom: var(--spacing-md);
+  font-size: 15px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.form-message-success {
+  background-color: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.form-message-error {
+  background-color: #fff5f5;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.form-message-info {
+  background-color: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+/* Button Loading State */
+.btn.loading {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.btn.loading::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  margin-left: -8px;
+  margin-top: -8px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Multi-channel Contact Options */
+.contact-channels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.contact-channel-card {
+  background: var(--bg-secondary);
+  padding: var(--spacing-lg);
+  border-radius: 16px;
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid var(--border);
+}
+
+.contact-channel-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.contact-channel-icon {
+  font-size: 32px;
+  margin-bottom: var(--spacing-sm);
+}
+
+.contact-channel-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: var(--spacing-xs);
+  color: var(--text);
+}
+
+.contact-channel-description {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.contact-channel-link {
+  display: inline-block;
+  color: var(--accent);
+  font-weight: 500;
+  font-size: 15px;
+  transition: color 0.2s ease;
+}
+
+.contact-channel-link:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+/* Contact Divider */
+.contact-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: var(--spacing-lg) 0;
+  position: relative;
+}
+
+.contact-divider::before,
+.contact-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.contact-divider span {
+  padding: 0 var(--spacing-md);
+  color: var(--text-secondary);
+  font-size: 14px;
+  background: var(--bg);
+  position: relative;
+}
+
 /* Footer */
 .site-footer {
   border-top: 0.5px solid var(--border);
@@ -639,6 +802,10 @@ h3 {
     grid-template-columns: 1fr;
   }
 
+  .contact-channels {
+    grid-template-columns: 1fr;
+  }
+
   .footer-inner {
     flex-direction: column;
     gap: var(--spacing-sm);
@@ -656,4 +823,159 @@ h3 {
 [data-reveal].visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* Social Sharing */
+.social-share-container {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.social-share-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  justify-content: center;
+  align-items: center;
+}
+
+.social-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.social-share-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+.social-share-btn svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.social-share-btn.facebook:hover {
+  background: rgba(24, 119, 242, 0.3);
+  border-color: rgba(24, 119, 242, 0.6);
+}
+
+.social-share-btn.twitter:hover {
+  background: rgba(29, 161, 242, 0.3);
+  border-color: rgba(29, 161, 242, 0.6);
+}
+
+.social-share-btn.pinterest:hover {
+  background: rgba(189, 8, 28, 0.3);
+  border-color: rgba(189, 8, 28, 0.6);
+}
+
+.social-share-btn.instagram:hover {
+  background: rgba(225, 48, 108, 0.3);
+  border-color: rgba(225, 48, 108, 0.6);
+}
+
+.social-share-btn.copy-link:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+@media (max-width: 768px) {
+  .social-share-btn span {
+    display: none;
+  }
+  
+  .social-share-btn {
+    padding: 10px;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    justify-content: center;
+  }
+  
+  .social-share-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* Share Notification */
+.share-notification {
+  position: fixed;
+  bottom: var(--spacing-lg);
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--text);
+  color: var(--bg);
+  padding: 12px 24px;
+  border-radius: 24px;
+  font-size: 15px;
+  font-weight: 500;
+  z-index: 10000;
+  opacity: 0;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-lg);
+}
+
+.share-notification.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Instagram Feed */
+.instagram-feed-section {
+  background: var(--bg-secondary);
+  padding: var(--spacing-2xl) 0;
+}
+
+#instagram-feed {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+}
+
+.instagram-feed-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.instagram-feed-item:hover {
+  transform: scale(1.05);
+}
+
+.instagram-feed-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.instagram-feed-placeholder {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--text-secondary);
+}
+
+.instagram-feed-placeholder code {
+  background: var(--bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
 }
