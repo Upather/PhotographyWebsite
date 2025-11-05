@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Contact Form Analytics — Photography Portfolio</title>
+    <link rel="stylesheet" href="assets/css/styles.css" />
+    <style>
+      .analytics-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: var(--spacing-xl);
+      }
+      .analytics-header {
+        margin-bottom: var(--spacing-xl);
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-xl);
+      }
+      .stat-card {
+        background: var(--bg-secondary);
+        padding: var(--spacing-lg);
+        border-radius: 16px;
+        border: 1px solid var(--border);
+      }
+      .stat-value {
+        font-size: 48px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: var(--spacing-xs);
+      }
+      .stat-label {
+        font-size: 15px;
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+      .service-chart {
+        background: var(--bg-secondary);
+        padding: var(--spacing-lg);
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        margin-bottom: var(--spacing-xl);
+      }
+      .service-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--spacing-sm) 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .service-item:last-child {
+        border-bottom: none;
+      }
+      .service-name {
+        font-weight: 500;
+        color: var(--text);
+      }
+      .service-count {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .empty-state {
+        text-align: center;
+        padding: var(--spacing-2xl);
+        color: var(--text-secondary);
+      }
+      .btn-clear {
+        background: #ff3b30;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 500;
+        margin-top: var(--spacing-md);
+      }
+      .btn-clear:hover {
+        opacity: 0.9;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="analytics-container">
+      <div class="analytics-header">
+        <h1>Contact Form Analytics</h1>
+        <p class="section-description">View statistics about contact form submissions</p>
+      </div>
+
+      <div id="analytics-content">
+        <div class="empty-state">
+          <p>Loading analytics...</p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function formatServiceName(service) {
+        const names = {
+          safw: 'SA Fashion Week',
+          sfw: 'Soweto Fashion Week',
+          editorial: 'Editorial Shoot',
+          campaign: 'Campaign Photography',
+          lookbook: 'Lookbook',
+          other: 'Other',
+        };
+        return names[service] || service;
+      }
+
+      function loadAnalytics() {
+        if (!window.contactFormAnalytics) {
+          document.getElementById('analytics-content').innerHTML = `
+            <div class="empty-state">
+              <p>Analytics not available. Please ensure contact-form.js is loaded.</p>
+            </div>
+          `;
+          return;
+        }
+
+        const submissions = window.contactFormAnalytics.getSubmissions();
+        const serviceStats = window.contactFormAnalytics.getServiceStats();
+
+        if (submissions.length === 0) {
+          document.getElementById('analytics-content').innerHTML = `
+            <div class="empty-state">
+              <p>No submissions yet. Analytics will appear here once users submit the contact form.</p>
+            </div>
+          `;
+          return;
+        }
+
+        // Calculate statistics
+        const totalSubmissions = submissions.length;
+        const avgMessageLength = Math.round(
+          submissions.reduce((sum, s) => sum + s.messageLength, 0) / totalSubmissions
+        );
+        const servicesWithMessages = submissions.filter(s => s.hasMessage).length;
+        const messageRate = Math.round((servicesWithMessages / totalSubmissions) * 100);
+
+        // Sort services by count
+        const sortedServices = Object.entries(serviceStats)
+          .sort((a, b) => b[1] - a[1])
+          .map(([service, count]) => ({
+            name: formatServiceName(service),
+            count,
+            percentage: Math.round((count / totalSubmissions) * 100),
+          }));
+
+        // Render statistics
+        document.getElementById('analytics-content').innerHTML = `
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value">${totalSubmissions}</div>
+              <div class="stat-label">Total Submissions</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">${avgMessageLength}</div>
+              <div class="stat-label">Avg Message Length</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">${messageRate}%</div>
+              <div class="stat-label">With Detailed Messages</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">${sortedServices.length}</div>
+              <div class="stat-label">Service Types</div>
+            </div>
+          </div>
+
+          <div class="service-chart">
+            <h2 style="margin-bottom: var(--spacing-md);">Submissions by Service Type</h2>
+            ${sortedServices
+              .map(
+                service => `
+              <div class="service-item">
+                <span class="service-name">${service.name}</span>
+                <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+                  <span style="font-size: 14px; color: var(--text-secondary);">${service.percentage}%</span>
+                  <span class="service-count">${service.count}</span>
+                </div>
+              </div>
+            `
+              )
+              .join('')}
+          </div>
+
+          <div style="text-align: center;">
+            <button class="btn-clear" onclick="clearAnalytics()">Clear Analytics Data</button>
+            <p style="font-size: 13px; color: var(--text-secondary); margin-top: var(--spacing-sm);">
+              This will permanently delete all analytics data. This action cannot be undone.
+            </p>
+          </div>
+        `;
+      }
+
+      function clearAnalytics() {
+        if (confirm('Are you sure you want to clear all analytics data? This action cannot be undone.')) {
+          if (window.contactFormAnalytics) {
+            window.contactFormAnalytics.clearAnalytics();
+            loadAnalytics();
+          }
+        }
+      }
+
+      // Load analytics when page loads
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+          // Wait a bit for contact-form.js to load
+          setTimeout(loadAnalytics, 500);
+        });
+      } else {
+        setTimeout(loadAnalytics, 500);
+      }
+    </script>
+    <script src="assets/js/contact-form.js"></script>
+  </body>
+</html>
+
